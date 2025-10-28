@@ -38,7 +38,7 @@ exports.actualizarUsuario = async (req, res) => {
 
     // Lógica para actualizar un usuario
     // Aceptar email por body o por parámetro de ruta (req.params.email)
-    const { nombre, password } = req.body;
+    const { nombre, password, admin } = req.body;
     const email = req.params && req.params.email ? req.params.email : req.body.email;
     try{
         if(!email){
@@ -49,7 +49,7 @@ exports.actualizarUsuario = async (req, res) => {
         const update = {};
         if(nombre !== undefined) update.nombre = nombre;
         if(password !== undefined) update.password = password;
-
+        if(admin !== undefined) update.admin = admin;
         // Buscar por email y actualizar
         const usuarioActualizado = await modelos.Usuario.findOneAndUpdate({ email }, update, { new: true });
 

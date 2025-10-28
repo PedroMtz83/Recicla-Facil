@@ -65,14 +65,15 @@ class UsuarioService {
     required String email, // Email para identificar al usuario
     String? nombre,       // Datos opcionales a actualizar
     String? password,
+    bool? admin,
   }) async {
     // URL específica para la actualización, ej: /api/usuarios/test@test.com
     final Uri url = Uri.parse('$_baseUrl/$email');
 
-    final Map<String, String> body = {};
+    final Map<String, dynamic> body = {};
     if (nombre != null) body['nombre'] = nombre;
     if (password != null) body['password'] = password;
-
+    if (admin != null) body['admin'] = admin;
     if (body.isEmpty) {
       debugPrint("No se proporcionaron datos para actualizar.");
       return false;
