@@ -52,7 +52,7 @@ gitignore
 # 1. Dependencias de Node.js (ESENCIAL)
 # Esta carpeta puede pesar cientos de megabytes y se regenera fácilmente
 # con el comando `npm install`. NUNCA debe subirse al repositorio.
-/node_modules
+node_modules
 
 # 2. Archivo de Variables de Entorno (¡CRÍTICO POR SEGURIDAD!)
 # Contiene tus secretos: cadenas de conexión, contraseñas, claves de API, etc.
