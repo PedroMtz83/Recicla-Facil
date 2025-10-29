@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Para usar debugPrint
 
+
 class UsuarioService {
   // Asegúrate de que esta sea la ruta base correcta donde se montan tus rutas de usuario.
-  static const String _baseUrl = 'http://192.168.1.68:3000/api/usuarios'; //Cambien la ip si lo van a probar en su equipo.
+  static const String _baseUrl = 'http://192.168.1.70:3000/api/usuarios'; 
 
   // ===================================================================
   // 1. OBTENER todos los usuarios (Coincide con `obtenerUsuarios`)
@@ -37,23 +38,23 @@ class UsuarioService {
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        // Usamos los nombres de campos de TU controlador: nombre, email, password
         body: json.encode({
           'nombre': nombre,
           'email': email,
           'password': password,
         }),
       );
+      
       if (response.statusCode == 201) {
         debugPrint('Usuario creado exitosamente.');
         return true;
       } else {
-        debugPrint('Error del servidor [POST]: ${response.statusCode}');
+        debugPrint('Error del servidor [REGISTRO]: ${response.statusCode}');
         debugPrint('Respuesta: ${response.body}');
         return false;
       }
     } catch (e) {
-      debugPrint('Error de conexión [POST]: $e');
+      debugPrint('Error de conexión [REGISTRO]: $e');
       return false;
     }
   }
@@ -117,6 +118,38 @@ class UsuarioService {
     } catch (e) {
       debugPrint('Error de conexión [DELETE]: $e');
       return false;
+    }
+  }
+
+
+  // ===================================================================
+  // LOGIN de usuario
+  // ===================================================================
+  Future<Map<String, dynamic>?> loginUsuario({
+  required String nombre,
+  required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/login'),
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: json.encode({
+          'nombre': nombre,
+          'password': password,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        debugPrint('Login exitoso.');
+        final data = json.decode(response.body);
+        return data;
+      } else {
+        debugPrint('Error del servidor [LOGIN]: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error de conexión [LOGIN]: $e');
+      return null;
     }
   }
 }
