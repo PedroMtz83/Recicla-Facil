@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart'; // Para usar debugPrint
 
 class UsuarioService {
   // Asegúrate de que esta sea la ruta base correcta donde se montan tus rutas de usuario.
-  static const String _baseUrl = 'http://192.168.1.70:3000/api/usuarios'; 
+  static const String _baseUrl = 'http://192.168.1.68:3000/api/usuarios';
 
   // ===================================================================
   // 1. OBTENER todos los usuarios (Coincide con `obtenerUsuarios`)

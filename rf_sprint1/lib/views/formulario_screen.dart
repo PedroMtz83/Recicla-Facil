@@ -1,41 +1,37 @@
 import 'package:flutter/material.dart';
 import '../services/usuario_service.dart';
 
-class LoginScreen extends StatefulWidget {
-   LoginScreen({super.key});
+class FormularioScreen extends StatefulWidget {
+   FormularioScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
-  _LoginScreenState createState() => _LoginScreenState();
+  _FormularioScreenState createState() => _FormularioScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _FormularioScreenState extends State<FormularioScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _mensajeController = TextEditingController();
   bool _isLoading = false;
-
-  void _login() async {
-    if (!_formKey.currentState!.validate()) return;
+//Cambiar e integrar el back del formulario con los siguientes atributos en el modelo
+  // mensaje String correo String estadoRespondido (true o false)
+  void _enviar() {
+    print(_mensajeController.text);
+    Navigator.pushReplacementNamed(context, '/login');
+  /*  if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
       final usuarioService = UsuarioService();
-      final response = await usuarioService.loginUsuario(
-        nombre: _nombreController.text,
-        password: _passwordController.text,
+      final response = await usuarioService.mensajeUsuario(
+        mensaje: _mensajeController.text,
       );
 
-      if (response != null && response['mensaje'] == 'Inicio de sesión exitoso') {
-        debugPrint('Usuario logueado: ${response['usuario']}');
+      if (response != null && response['mensaje'] == 'Mensaje enviado con éxito') {
+        debugPrint('Mensaje enviado: ${response['usuario']}');
         // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Usuario o contraseña incorrectos')),
-        );
       }
     } catch (e) {
       // ignore: use_build_context_synchronously
@@ -45,6 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+
+   */
   }
 
   @override
@@ -100,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                        SizedBox(height: 16),
 
                        Text(
-                        'Inicio de sesión',
+                        'Formulario de quejas y sugerencias',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.white,
@@ -117,56 +115,23 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextFormField(
-                          controller: _nombreController,
+                          controller: _mensajeController,
                           decoration:  InputDecoration(
-                            labelText: 'Nombre de usuario',
+                            labelText: 'Envíe su mensaje',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.person),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Nombre Obligatorio';
-                            }
-                            return null;
-                          },
+                          maxLines: null,
                         ),
                       ),
-
-                       SizedBox(height: 20),
-
-                      // Campo de contraseña (sin cambios)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration:  InputDecoration(
-                            labelText: 'Contraseña',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: Icon(Icons.lock),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Contraseña Obligatorio';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-
                        SizedBox(height: 30),
-
                       // Botón Ingresar (sin cambios)
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
+                          onPressed: _isLoading ? null : _enviar,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
@@ -185,53 +150,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           )
                               :  Text(
-                            'Ingresar',
+                            'Enviar',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                      ),
-
-                       SizedBox(height: 20),
-
-                      // Textos y botones inferiores (sin cambios)
-                      TextButton(
-                        onPressed: () {},
-                        child:  Text(
-                          'Olvidé mi contraseña',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-
-                       SizedBox(height: 20),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                           Text(
-                            '¿No tienes cuenta?',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                           SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/register');
-                            },
-                            child:  Text(
-                              'Registrate',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),
@@ -247,8 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _passwordController.dispose();
+    _mensajeController.dispose();
     super.dispose();
   }
 }
