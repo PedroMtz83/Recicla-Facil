@@ -10,42 +10,59 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final usuarioService = UsuarioService();
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // En tu archivo 'views/login_screen.dart'
+
   void _login() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
-      final usuarioService = UsuarioService();
       final response = await usuarioService.loginUsuario(
-        nombre: _nombreController.text,
-        password: _passwordController.text,
+        nombre: _nombreController.text.trim(),
+        password: _passwordController.text.trim(),
       );
 
-      if (response != null && response['mensaje'] == 'Inicio de sesión exitoso') {
-        debugPrint('Usuario logueado: ${response['usuario']}');
-        // ignore: use_build_context_synchronously
-        Navigator.pushReplacementNamed(context, '/home');
+      // --- LÓGICA DE UI CORREGIDA ---
+      // El servicio ya no puede devolver null bajo esta lógica, pero la comprobación no hace daño.
+      if (response == null) {
+        throw Exception('Respuesta inesperada del servidor.');
+      }
+
+      // AHORA SÍ, la UI es responsable de interpretar el mensaje
+      if (response['mensaje'] == 'Inicio de sesión exitoso') {
+        if (mounted) Navigator.pushReplacementNamed(context, '/home');
       } else {
-        // ignore: use_build_context_synchronously
+        // Si el mensaje no es de éxito, asumimos que son credenciales incorrectas.
+        // Esta es la lógica de negocio que pertenece a la UI.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Usuario o contraseña incorrectos2')),
+          );
+        }
+      }
+
+    } catch (e) {
+      // Este CATCH ahora atrapa TODOS los errores lanzados desde el servicio:
+      // - TimeoutException -> "Tiempo de espera agotado..."
+      // - SocketException -> "Error de red..."
+      // - Error de Servidor -> "Error del servidor: 500"
+      // - ClientException -> "No se pudo procesar la solicitud..."
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Usuario o contraseña incorrectos')),
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
         );
       }
-    } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error de conexión: $e')),
-      );
+
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
+}
 
   @override
   Widget build(BuildContext context) {

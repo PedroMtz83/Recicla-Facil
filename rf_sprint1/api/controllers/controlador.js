@@ -23,14 +23,33 @@ exports.loginUsuario = async (req, res) => {
     // Lógica para el inicio de sesión de un usuario
     try{
         const { nombre, password } = req.body;
-        const usuario = await modelos.Usuario.findOne({ nombre, password });
+
+        const usuario = await modelos.Usuario.findOne( { nombre: nombre });
         if(!usuario){
-            return res.status(404).json({ mensaje: 'Usuario no encontrado' });
-        }else{
-            res.status(200).json({ mensaje: 'Inicio de sesión exitoso', usuario });
+        
+            return res.status(401).json({ mensaje: 'Usuario incorrecto' });
+        } 
+        
+        // 4. Si las contraseñas NO coinciden, envía un 401
+        if (password != usuario.password) {
+            return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
         }
-    }catch(error){
-        res.status(500).json({ mensaje: 'Error al iniciar sesión', error: error.message });
+
+        // 5. Si TODO es correcto, envía un 200 (OK)
+        
+        const usuarioParaCliente = {
+            id: usuario.id,
+            nombre: usuario.nombre
+        };
+        
+        res.status(200).json({ 
+            mensaje: 'Inicio de sesión exitoso', 
+            usuario: usuarioParaCliente 
+        });
+
+    } catch (error) {
+        console.error("Error en loginUsuario:", error); // Es bueno loggear el error real
+        res.status(500).json({ mensaje: 'Error interno al iniciar sesión' });
     }
 
 }

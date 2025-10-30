@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'package:flutter/foundation.dart'; // Para usar debugPrint
 
 
@@ -125,9 +126,11 @@ class UsuarioService {
   // ===================================================================
   // LOGIN de usuario
   // ===================================================================
-  Future<Map<String, dynamic>?> loginUsuario({
-  required String nombre,
-  required String password,
+  // En tu archivo 'services/usuario_service.dart'
+
+  Future<Map<String, dynamic>?> loginUsuario({ // Hacemos el retorno nullable
+    required String nombre,
+    required String password,
   }) async {
     try {
       final response = await http.post(
@@ -137,19 +140,23 @@ class UsuarioService {
           'nombre': nombre,
           'password': password,
         }),
-      );
-      
-      if (response.statusCode == 200) {
-        debugPrint('Login exitoso.');
-        final data = json.decode(response.body);
-        return data;
+      ).timeout(const Duration(seconds: 10)); // El onTimeout aquí es redundante si capturas TimeoutException abajo
+    print (response.statusCode);
+    print (response.body);
+    print (response.headers);
+      // --- ¡LÓGICA CORREGIDA! ---
+      // Si la respuesta es un código de éxito o un error de credenciales conocido, la devolvemos.
+      if (response.statusCode == 200 || response.statusCode == 401) {
+        return json.decode(response.body);
       } else {
-        debugPrint('Error del servidor [LOGIN]: ${response.statusCode}');
-        return null;
+        // Para CUALQUIER otro código de estado (404, 500, etc.), lanzamos un error de SERVIDOR.
+        // NO interpretamos el error como "credenciales incorrectas".
+        throw Exception('Error del servidor: ${response.statusCode}');
       }
-    } catch (e) {
-      debugPrint('Error de conexión [LOGIN]: $e');
-      return null;
+
+    } on TimeoutException {
+      // Si la petición excede los 10 segundos, lanzamos este error específico.
+      throw Exception('Tiempo de espera agotado. Revisa tu conexión.');
     }
   }
 }
