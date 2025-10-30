@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'views/login_screen.dart'; 
+import 'views/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
         body: SizedBox(
           width: 533,
           height: 800,
-          child: LoginScreen(), 
+          child: LoginScreen(),
         ),
       ),
       debugShowCheckedModeBanner: false,

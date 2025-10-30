@@ -1,41 +1,57 @@
 import 'package:flutter/material.dart';
 import '../services/usuario_service.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
-  _LoginScreenState createState() => _LoginScreenState();
+  _RegisterScreenState createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
-  void _login() async {
+  void _register() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Verificar que las contraseñas coincidan
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Las contraseñas no coinciden')),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
       final usuarioService = UsuarioService();
-      final response = await usuarioService.loginUsuario(
+      final success = await usuarioService.crearUsuario(
         nombre: _nombreController.text,
+        email: _emailController.text,
         password: _passwordController.text,
       );
 
-      if (response != null && response['mensaje'] == 'Inicio de sesión exitoso') {
-        debugPrint('Usuario logueado: ${response['usuario']}');
+      if (success) {
         // ignore: use_build_context_synchronously
-        Navigator.pushReplacementNamed(context, '/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registro exitoso')),
+        );
+        // Regresar al login después de registro exitoso
+        // ignore: use_build_context_synchronously
+        Navigator.pop(context);
       } else {
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario o contraseña incorrectos')),
+          const SnackBar(content: Text('Error en el registro')),
         );
       }
     } catch (e) {
@@ -56,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
         height: 800,
         child: Stack(
           children: [
-            // Fondo de pantalla
+            // Fondo de pantalla (mismo que login)
             Container(
               width: double.infinity,
               height: double.infinity,
@@ -68,6 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             
+            // Capa semitransparente
             Container(
               width: double.infinity,
               height: double.infinity,
@@ -83,8 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 70),
+                      const SizedBox(height: 40),
                       
+                      // Logo + Título
                       SizedBox(
                         width: 393,
                         height: 104,
@@ -97,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                       
                       const Text(
-                        'Inicio de sesión',
+                        'Regístrate',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.white,
@@ -105,9 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 40),
                       
-                      // Campo de nombre
+                      // Campo de nombre de usuario
                       Container(
                         decoration: BoxDecoration(
                           // ignore: deprecated_member_use
@@ -124,7 +142,40 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Nombre Obligatorio';
+                              return 'Nombre obligatorio';
+                            }
+                            if (value.length < 3) {
+                              return 'Mínimo 3 caracteres';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Campo de correo electrónico
+                      Container(
+                        decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Correo Electrónico',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: Icon(Icons.email),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Correo electrónico obligatorio';
+                            }
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return 'Ingresa un correo válido';
                             }
                             return null;
                           },
@@ -142,16 +193,66 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: TextFormField(
                           controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
                             labelText: 'Contraseña',
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: Icon(Icons.lock),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Contraseña Obligatorio';
+                              return 'Contraseña obligatoria';
+                            }
+                            if (value.length < 6) {
+                              return 'Mínimo 6 caracteres';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Campo de confirmar contraseña
+                      Container(
+                        decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          decoration: InputDecoration(
+                            labelText: 'Confirmar Contraseña',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword = !_obscureConfirmPassword;
+                                });
+                              },
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Confirma tu contraseña';
                             }
                             return null;
                           },
@@ -160,12 +261,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       
                       const SizedBox(height: 30),
                       
-                      // Botón Ingresar
+                      // Botón Registrarse
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
+                          onPressed: _isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
@@ -184,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 )
                               : const Text(
-                                  'Ingresar',
+                                  'Registrarse',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -195,12 +296,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       
                       const SizedBox(height: 20),
                       
+                      // Enlace para volver al login
                       TextButton(
                         onPressed: () {
-                          // Navigator.pushNamed(context, '/forgot-password');
+                          Navigator.pop(context);
                         },
                         child: const Text(
-                          'Olvidé mi contraseña',
+                          '¿Ya tienes cuenta? Inicia sesión',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
@@ -208,41 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
-                      
-                      // HIPERVÍNCULO ACTUALIZADO
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            '¿No tienes cuenta?',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const RegisterScreen(),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'Registrate',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -257,7 +325,9 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _nombreController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 }

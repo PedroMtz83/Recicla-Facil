@@ -1,14 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart'; // Para usar debugPrint
-
+import 'package:flutter/foundation.dart';
 
 class UsuarioService {
-  // Asegúrate de que esta sea la ruta base correcta donde se montan tus rutas de usuario.
-  static const String _baseUrl = 'http://192.168.1.70:3000/api/usuarios'; 
+  static const String _baseUrl = 'http://192.168.1.70:3000/api/usuarios';
 
   // ===================================================================
-  // 1. OBTENER todos los usuarios (Coincide con `obtenerUsuarios`)
+  // 1. OBTENER todos los usuarios
   // ===================================================================
   Future<List<dynamic>> obtenerUsuarios() async {
     try {
@@ -27,7 +25,7 @@ class UsuarioService {
   }
 
   // ===================================================================
-  // 2. CREAR un nuevo usuario (Coincide con `crearUsuario`)
+  // 2. CREAR un nuevo usuario
   // ===================================================================
   Future<bool> crearUsuario({
     required String nombre,
@@ -44,31 +42,29 @@ class UsuarioService {
           'password': password,
         }),
       );
-      
       if (response.statusCode == 201) {
         debugPrint('Usuario creado exitosamente.');
         return true;
       } else {
-        debugPrint('Error del servidor [REGISTRO]: ${response.statusCode}');
+        debugPrint('Error del servidor [POST]: ${response.statusCode}');
         debugPrint('Respuesta: ${response.body}');
         return false;
       }
     } catch (e) {
-      debugPrint('Error de conexión [REGISTRO]: $e');
+      debugPrint('Error de conexión [POST]: $e');
       return false;
     }
   }
 
   // ===================================================================
-  // 3. ACTUALIZAR un usuario por su email (Coincide con `actualizarUsuario`)
+  // 3. ACTUALIZAR un usuario por su email
   // ===================================================================
   Future<bool> actualizarUsuario({
-    required String email, // Email para identificar al usuario
-    String? nombre,       // Datos opcionales a actualizar
+    required String email,
+    String? nombre,
     String? password,
     bool? admin,
   }) async {
-    // URL específica para la actualización, ej: /api/usuarios/test@test.com
     final Uri url = Uri.parse('$_baseUrl/$email');
 
     final Map<String, dynamic> body = {};
@@ -101,11 +97,10 @@ class UsuarioService {
   }
 
   // ===================================================================
-  // 4. ELIMINAR un usuario por su email (Coincide con `eliminarUsuario`)
+  // 4. ELIMINAR un usuario por su email
   // ===================================================================
   Future<bool> eliminarUsuario(String email) async {
     try {
-      // El email se añade directamente a la URL, como en tu controlador
       final response = await http.delete(Uri.parse('$_baseUrl/$email'));
       if (response.statusCode == 200) {
         debugPrint('Usuario eliminado exitosamente.');
@@ -121,13 +116,12 @@ class UsuarioService {
     }
   }
 
-
   // ===================================================================
-  // LOGIN de usuario
+  // 5. LOGIN de usuario
   // ===================================================================
   Future<Map<String, dynamic>?> loginUsuario({
-  required String nombre,
-  required String password,
+    required String nombre,
+    required String password,
   }) async {
     try {
       final response = await http.post(
@@ -143,8 +137,12 @@ class UsuarioService {
         debugPrint('Login exitoso.');
         final data = json.decode(response.body);
         return data;
+      } else if (response.statusCode == 404) {
+        debugPrint('Usuario no encontrado');
+        return null;
       } else {
         debugPrint('Error del servidor [LOGIN]: ${response.statusCode}');
+        debugPrint('Respuesta: ${response.body}');
         return null;
       }
     } catch (e) {
