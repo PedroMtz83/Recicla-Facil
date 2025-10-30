@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/usuario_service.dart';
+import '../services/queja_service.dart';
 
 class FormularioScreen extends StatefulWidget {
    FormularioScreen({super.key});
@@ -12,103 +12,134 @@ class FormularioScreen extends StatefulWidget {
 class _FormularioScreenState extends State<FormularioScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mensajeController = TextEditingController();
+  // --- PASO 1: Añadir controlador para el correo ---
+  final _emailController = TextEditingController();
   bool _isLoading = false;
-//Cambiar e integrar el back del formulario con los siguientes atributos en el modelo
-  // mensaje String correo String estadoRespondido (true o false)
-  void _enviar() {
-    print(_mensajeController.text);
-    Navigator.pushReplacementNamed(context, '/login');
-  /*  if (!_formKey.currentState!.validate()) return;
+
+  // --- PASO 2: Implementar la lógica de envío completa ---
+  Future<void> _enviar() async {
+    // Validar ambos campos del formulario
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final usuarioService = UsuarioService();
-      final response = await usuarioService.mensajeUsuario(
-        mensaje: _mensajeController.text,
-      );
+      // Instanciar el servicio
+      final quejaService = QuejaService();
 
-      if (response != null && response['mensaje'] == 'Mensaje enviado con éxito') {
-        debugPrint('Mensaje enviado: ${response['usuario']}');
-        // ignore: use_build_context_synchronously
+      // Llamar al método para crear la queja con ambos datos
+      final response = await quejaService.crearQueja(
+        mensaje: _mensajeController.text.trim(),
+        correo: _emailController.text.trim(),
+      );
+      if (!mounted) return;
+
+      // Interpretar la respuesta del servidor
+      if (response['statusCode'] == 201) { // 201: Creado con éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+            content: Text('Mensaje enviado con éxito. Gracias por tu opinión.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Regresar a la pantalla anterior
         Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        // Mostrar cualquier otro mensaje de error que venga del backend
+        final errorMessage = response['mensaje'] ?? 'Error desconocido al enviar el mensaje.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $errorMessage'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error de conexión: $e')),
-      );
+      // Atrapar errores de conexión (Timeout, sin internet, etc.)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      // Asegurarse de que el spinner siempre se oculte
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-
-   */
   }
 
   @override
   Widget build(BuildContext context) {
-    // Obtenemos el tamaño de la pantalla para tomar decisiones si es necesario.
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
+      // Añadido para evitar que el teclado empuje y deforme el layout
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // ----------------------------------------------------
-          // 1. FONDO: Ocupa toda la pantalla (Esto estaba bien)
-          // ----------------------------------------------------
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/backgrounds/fondo_login.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/backgrounds/fondo_login.png', fit: BoxFit.cover),
           ),
           Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.3),
-            ),
+            child: Container(color: Colors.black.withOpacity(0.3)),
           ),
-
-          // ----------------------------------------------------
-          // 2. CONTENIDO DEL FORMULARIO: Centrado y con ancho máximo
-          // ----------------------------------------------------
-          Center( // <-- PASO 1: Centra a su hijo horizontal y verticalmente
-            child: ConstrainedBox( // <-- PASO 2: Limita el ancho máximo del formulario
-              constraints:  BoxConstraints(maxWidth: 450), // Un buen ancho para formularios
+          Center(
+            child: ConstrainedBox(
+              constraints:  BoxConstraints(maxWidth: 450),
               child: SingleChildScrollView(
                 padding:  EdgeInsets.all(24.0),
                 child: Form(
                   key: _formKey,
-                  // El resto de tu formulario va aquí dentro, sin cambios
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center, // Centra el contenido de la columna
+                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // El SizedBox inicial ya no es necesario si la columna está centrada
-                      //  SizedBox(height: 70),
-
                       SizedBox(
-                        // Puedes usar un ancho relativo si quieres
                         width: screenSize.width * 0.6,
-                        child: Image.asset(
-                          'assets/images/logos/logo_completo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.asset('assets/images/logos/logo_completo.png', fit: BoxFit.contain),
                       ),
-
                        SizedBox(height: 16),
-
                        Text(
                         'Formulario de quejas y sugerencias',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w300,
-                        ),
+                        style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.w300),
                       ),
-
                        SizedBox(height: 50),
 
-                      // Campo de nombre (sin cambios)
+                      // --- PASO 3: Añadir el campo de correo ---
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration:  InputDecoration(
+                            labelText: 'Tu correo electrónico',
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor, ingresa tu correo.';
+                            }
+                            // Expresión regular para validar correo
+                            final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                            if (!emailRegex.hasMatch(value)) {
+                              return 'Por favor, ingresa un correo válido.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                       SizedBox(height: 16),
+
+                      // Campo de mensaje (adaptado)
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.9),
@@ -117,16 +148,25 @@ class _FormularioScreenState extends State<FormularioScreen> {
                         child: TextFormField(
                           controller: _mensajeController,
                           decoration:  InputDecoration(
-                            labelText: 'Envíe su mensaje',
+                            labelText: 'Tu mensaje',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: Icon(Icons.person),
+                            prefixIcon: Icon(Icons.message_outlined),
                           ),
-                          maxLines: null,
+                          maxLines: 5, // Un número razonable de líneas
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'El mensaje no puede estar vacío.';
+                            }
+                            if (value.length < 10) {
+                              return 'Por favor, danos más detalles (mínimo 10 caracteres).';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                        SizedBox(height: 30),
-                      // Botón Ingresar (sin cambios)
+                      // Botón Enviar (sin cambios en la apariencia)
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -135,9 +175,7 @@ class _FormularioScreenState extends State<FormularioScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             elevation: 4,
                           ),
                           child: _isLoading
@@ -149,13 +187,7 @@ class _FormularioScreenState extends State<FormularioScreen> {
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                              :  Text(
-                            'Enviar',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                              :  Text('Enviar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -169,10 +201,11 @@ class _FormularioScreenState extends State<FormularioScreen> {
     );
   }
 
-
   @override
   void dispose() {
+    // --- PASO 4: Limpiar ambos controladores ---
     _mensajeController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 }

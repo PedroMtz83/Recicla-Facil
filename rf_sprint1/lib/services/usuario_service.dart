@@ -3,17 +3,76 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter/foundation.dart'; // Para usar debugPrint
 
-
 class UsuarioService {
-  // Asegúrate de que esta sea la ruta base correcta donde se montan tus rutas de usuario.
-  static const String _baseUrl = 'http://192.168.1.68:3000/api/usuarios';
+  static const String _apiRoot = 'http://192.168.1.68:3000/api';
 
   // ===================================================================
-  // 1. OBTENER todos los usuarios (Coincide con `obtenerUsuarios`)
+  // 1. LOGIN de un usuario
+  // ===================================================================
+  Future<Map<String, dynamic>> loginUsuario({
+    required String nombre,
+    required String password,
+  }) async {
+    final url = Uri.parse('$_apiRoot/usuarios/login');
+    debugPrint('Haciendo POST a: $url');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: json.encode({'nombre': nombre, 'password': password}),
+      ).timeout(const Duration(seconds: 10));
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      responseData['statusCode'] = response.statusCode;
+      return responseData;
+
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Revisa tu conexión.');
+    }
+  }
+
+  // ===================================================================
+  // 2. CREAR un nuevo usuario
+  // ===================================================================
+  Future<Map<String, dynamic>> crearUsuario({
+    required String nombre,
+    required String email,
+    required String password,
+  }) async {
+    // --- CORRECCIÓN #2: La ruta para crear es sobre el recurso "usuarios" ---
+    final url = Uri.parse('$_apiRoot/usuarios');
+    debugPrint('Haciendo POST a: $url');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=UTF-8'},
+        body: json.encode({
+          'nombre': nombre,
+          'email': email,
+          'password': password,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      responseData['statusCode'] = response.statusCode;
+      return responseData;
+
+    } on TimeoutException {
+      throw Exception('Tiempo de espera agotado. Revisa tu conexión a internet.');
+    }
+  }
+
+  // ===================================================================
+  // 3. OBTENER todos los usuarios
   // ===================================================================
   Future<List<dynamic>> obtenerUsuarios() async {
+    final url = Uri.parse('$_apiRoot/usuarios');
+    debugPrint('Haciendo GET a: $url');
+
     try {
-      final response = await http.get(Uri.parse(_baseUrl));
+      final response = await http.get(url);
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -26,41 +85,6 @@ class UsuarioService {
       return [];
     }
   }
-
-  // ===================================================================
-  // 2. CREAR un nuevo usuario (Coincide con `crearUsuario`)
-  // ===================================================================
-  Future<bool> crearUsuario({
-    required String nombre,
-    required String email,
-    required String password,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: json.encode({
-          'nombre': nombre,
-          'email': email,
-          'password': password,
-        }),
-      );
-      
-      if (response.statusCode == 201) {
-        debugPrint('Usuario creado exitosamente.');
-        return true;
-      } else {
-        debugPrint('Error del servidor [REGISTRO]: ${response.statusCode}');
-        debugPrint('Respuesta: ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('Error de conexión [REGISTRO]: $e');
-      return false;
-    }
-  }
-
-  // ===================================================================
   // 3. ACTUALIZAR un usuario por su email (Coincide con `actualizarUsuario`)
   // ===================================================================
   Future<bool> actualizarUsuario({
@@ -70,7 +94,7 @@ class UsuarioService {
     bool? admin,
   }) async {
     // URL específica para la actualización, ej: /api/usuarios/test@test.com
-    final Uri url = Uri.parse('$_baseUrl/$email');
+    final Uri url = Uri.parse('$_apiRoot/usuarios/$email');
 
     final Map<String, dynamic> body = {};
     if (nombre != null) body['nombre'] = nombre;
@@ -107,7 +131,7 @@ class UsuarioService {
   Future<bool> eliminarUsuario(String email) async {
     try {
       // El email se añade directamente a la URL, como en tu controlador
-      final response = await http.delete(Uri.parse('$_baseUrl/$email'));
+      final response = await http.delete(Uri.parse('$_apiRoot/usuarios/$email'));
       if (response.statusCode == 200) {
         debugPrint('Usuario eliminado exitosamente.');
         return true;
@@ -119,44 +143,6 @@ class UsuarioService {
     } catch (e) {
       debugPrint('Error de conexión [DELETE]: $e');
       return false;
-    }
-  }
-
-
-  // ===================================================================
-  // LOGIN de usuario
-  // ===================================================================
-  // En tu archivo 'services/usuario_service.dart'
-
-  Future<Map<String, dynamic>?> loginUsuario({ // Hacemos el retorno nullable
-    required String nombre,
-    required String password,
-  }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl/login'),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: json.encode({
-          'nombre': nombre,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 10)); // El onTimeout aquí es redundante si capturas TimeoutException abajo
-    print (response.statusCode);
-    print (response.body);
-    print (response.headers);
-      // --- ¡LÓGICA CORREGIDA! ---
-      // Si la respuesta es un código de éxito o un error de credenciales conocido, la devolvemos.
-      if (response.statusCode == 200 || response.statusCode == 401) {
-        return json.decode(response.body);
-      } else {
-        // Para CUALQUIER otro código de estado (404, 500, etc.), lanzamos un error de SERVIDOR.
-        // NO interpretamos el error como "credenciales incorrectas".
-        throw Exception('Error del servidor: ${response.statusCode}');
-      }
-
-    } on TimeoutException {
-      // Si la petición excede los 10 segundos, lanzamos este error específico.
-      throw Exception('Tiempo de espera agotado. Revisa tu conexión.');
     }
   }
 }

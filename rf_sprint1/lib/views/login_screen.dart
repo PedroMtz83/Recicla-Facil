@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/usuario_service.dart';
-
+import 'package:rf_sprint1/services/usuario_service.dart';
 class LoginScreen extends StatefulWidget {
    LoginScreen({super.key});
 
@@ -42,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Esta es la lógica de negocio que pertenece a la UI.
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario o contraseña incorrectos2')),
+            const SnackBar(content: Text('Usuario o contraseña incorrectos')),
           );
         }
       }
@@ -227,28 +226,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
                        SizedBox(height: 20),
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                           Text(
-                            '¿No tienes cuenta?',
-                            style: TextStyle(color: Colors.white),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, '/register');
+                        },
+                        child:  Text(
+                          '¿No tienes una cuenta? Registrate',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
                           ),
-                           SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/register');
-                            },
-                            child:  Text(
-                              'Registrate',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),

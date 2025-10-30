@@ -1,13 +1,42 @@
 const modelos = require('../models/modelos');
 
 exports.crearUsuario = async (req, res) => {
-    try{
+     try {
         const { nombre, email, password } = req.body;
-        const nuevoUsuario = new modelos.Usuario({ nombre, email, password });
-        await nuevoUsuario.save();
-        res.status(201).json({ mensaje: 'Usuario creado exitosamente', usuario: nuevoUsuario });
-    }catch(error){
-        res.status(500).json({ mensaje: 'Error al crear el usuario', error: error.message });
+
+        // 1. Verificar si el correo ya existe en la base de datos
+        const nombreExistente = await modelos.Usuario.findOne({ nombre: nombre.trim() });
+        if (nombreExistente) {
+                    // Usa el código 409 Conflict: El recurso no se puede crear porque ya existe.
+                    return res.status(409).json({ mensaje: "El nombre de usuario ya está registrado." });
+                }
+
+        const emailExistente = await modelos.Usuario.findOne({ email: email.trim() });
+
+        if (emailExistente) {
+            // Usa el código 409 Conflict: El recurso no se puede crear porque ya existe.
+            return res.status(409).json({ mensaje: "El correo electrónico ya está registrado." });
+        }
+
+        // (Aquí va tu lógica para hashear la contraseña con bcrypt, si la usas)
+
+        // Limpia y crea el nuevo usuario
+        const nuevoUsuario = await modelos.Usuario.create({
+            nombre: nombre.trim(),
+            email: email.trim(),
+            password: password, // O la contraseña hasheada
+        });
+
+        // 2. Respuesta de éxito: Código 201 Created
+        res.status(201).json({ 
+            mensaje: 'Usuario creado con éxito',
+            usuario: { id: nuevoUsuario.id, nombre: nuevoUsuario.nombre }
+        });
+
+    } catch (error) {
+        console.error("Error en crearUsuario:", error);
+        // 3. Respuesta de error del servidor: Código 500
+        res.status(500).json({ mensaje: 'Error interno al crear el usuario.' });
     }
 }
 
@@ -81,8 +110,6 @@ exports.actualizarUsuario = async (req, res) => {
         res.status(500).json({ mensaje: 'Error al actualizar el usuario', error: error.message });
     }
 
-
-
 }  
 exports.eliminarUsuario = async (req, res) => {
     // Lógica para eliminar un usuario
@@ -99,4 +126,125 @@ exports.eliminarUsuario = async (req, res) => {
     }catch(error){
         res.status(500).json({ mensaje: 'Error al eliminar el usuario', error: error.message });
     }
-} 
+}
+
+// =========================================================================
+// @desc    Crear una nueva queja (desde un formulario público)
+// @route   POST /api/quejas
+// @access  Público
+// =========================================================================
+exports.crearQueja = async (req, res) => {
+    try {
+        // --- ¡CAMBIO CLAVE! Leemos 'correo' y 'mensaje' del cuerpo ---
+        const { mensaje, correo } = req.body;
+
+        // Validamos que los datos necesarios hayan llegado
+        if (!mensaje || !correo) {
+            return res.status(400).json({ mensaje: 'Los campos de mensaje y correo son obligatorios.' });
+        }
+
+        // Creamos el nuevo documento 'Queja' en la base de datos
+        const nuevaQueja = new modelos.Queja({
+            mensaje: mensaje,
+            correo: correo // Guardamos el correo proporcionado
+            // Ya no hay 'usuario: usuarioId' porque no estamos logueados
+        });
+
+        // Guardamos la nueva queja en la base de datos
+        await nuevaQueja.save();
+
+        // Enviamos una respuesta de éxito (201 Created)
+        res.status(201).json({
+            mensaje: 'Queja enviada con éxito.',
+            queja: nuevaQueja
+        });
+
+    } catch (error) {
+        console.error("Error al crear la queja:", error);
+        res.status(500).json({ mensaje: 'Error interno del servidor al procesar la solicitud.' });
+    }
+};
+
+// =========================================================================
+// @desc    Obtener todas las quejas del usuario que está logueado
+// @route   GET /api/quejas/mis-quejas
+// @access  Privado (solo para el usuario dueño de las quejas)
+// =========================================================================
+exports.obtenerMisQuejas = async (req, res) => {
+    try {
+        // Obtenemos el ID del usuario desde el middleware de autenticación
+        const usuarioId = req.usuario.id;
+
+        // Buscamos todas las quejas que coincidan con el ID del usuario
+        // y las ordenamos de la más reciente a la más antigua.
+        const quejas = await modelos.Queja.find({ usuario: usuarioId }).sort({ fechaCreacion: -1 });
+
+        res.status(200).json(quejas);
+
+    } catch (error) {
+        console.error("Error al obtener mis quejas:", error);
+        res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    }
+};
+
+// =========================================================================
+// @desc    Obtener todas las quejas pendientes (para Administradores)
+// @route   GET /api/quejas/pendientes
+// @access  Privado (solo para Administradores)
+// =========================================================================
+exports.obtenerQuejasPendientes = async (req, res) => {
+    try {
+        // Buscamos todas las quejas con estado 'Pendiente'
+        // 'populate' es muy útil aquí: reemplaza el ID del usuario con los datos del usuario (nombre y email).
+        const quejasPendientes = await modelos.Queja.find({ estado: 'Pendiente' })
+            .populate('usuario', 'nombre email') // <-- ¡Esto es muy potente!
+            .sort({ fechaCreacion: 1 }); // Ordenamos de la más antigua a la más nueva
+
+        res.status(200).json(quejasPendientes);
+
+    } catch (error) {
+        console.error("Error al obtener quejas pendientes:", error);
+        res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    }
+};
+
+// =========================================================================
+// @desc    Atender una queja (para Administradores)
+// @route   PUT /api/quejas/:id
+// @access  Privado (solo para Administradores)
+// =========================================================================
+exports.atenderQueja = async (req, res) => {
+    try {
+        const { respuestaAdmin } = req.body;
+        const quejaId = req.params.id; // El ID de la queja viene de la URL
+
+        if (!respuestaAdmin) {
+            return res.status(400).json({ mensaje: 'La respuesta del administrador es obligatoria.' });
+        }
+
+        // Buscamos la queja por su ID y la actualizamos
+        const quejaAtendida = await modelos.Queja.findByIdAndUpdate(
+            quejaId,
+            {
+                estado: 'Atendida',
+                respuestaAdmin: respuestaAdmin,
+                fechaAtencion: new Date() // Guardamos la fecha actual
+            },
+            { new: true } // {new: true} hace que Mongoose devuelva el documento ya actualizado
+        );
+
+        if (!quejaAtendida) {
+            return res.status(404).json({ mensaje: 'No se encontró una queja con ese ID.' });
+        }
+
+        res.status(200).json({
+            mensaje: 'La queja ha sido atendida con éxito.',
+            queja: quejaAtendida
+        });
+
+    } catch (error) {
+        console.error("Error al atender la queja:", error);
+        res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    }
+};
+
