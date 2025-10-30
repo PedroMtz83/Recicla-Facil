@@ -129,7 +129,7 @@ class _AppSp01State extends State<AppSp01> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            ElevatedButton(onPressed: _probarGet, child: const Text('GET')),
+            ElevatedButton(onPressed: _probarGet, child: Text('GET')),
             ElevatedButton(
                 onPressed: _probarPost,
                 child: Text('POST'),

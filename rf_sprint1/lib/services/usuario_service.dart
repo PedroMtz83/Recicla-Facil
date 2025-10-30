@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart'; // Para usar debugPrint
-
 class UsuarioService {
   // Asegúrate de que esta sea la ruta base correcta donde se montan tus rutas de usuario.
   static const String _baseUrl = 'http://192.168.1.68:3000/api/usuarios'; //Cambien la ip si lo van a probar en su equipo.
