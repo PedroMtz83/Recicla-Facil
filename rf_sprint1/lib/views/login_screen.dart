@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../auth_provider.dart';
 import '../services/usuario_service.dart';
 import 'package:rf_sprint1/vars.dart';
 
@@ -45,7 +47,10 @@ class _LoginScreenState extends State<LoginScreen> {
           // como guardarlo en un provider o pasarlo a la siguiente pantalla.
           // Ejemplo:
           // Provider.of<AuthProvider>(context, listen: false).login(emailDelUsuario, nombreDelUsuario);
+          Provider.of<AuthProvider>(context, listen: false)
+              .login(emailDelUsuario, nombreDelUsuario);
 
+          // 4. Navega a la siguiente pantalla.
           Navigator.pushReplacementNamed(context, '/home');
 
         } else {

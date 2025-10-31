@@ -48,6 +48,71 @@ exports.obtenerUsuarios = async (req, res) => {
         res.status(500).json({ mensaje: 'Error al obtener los usuarios', error: error.message });
     }
 }
+
+exports.obtenerUsuarioPorEmail = async (req, res) => {
+    try {
+        // 1. Obtiene el email de los parámetros de la URL
+        const email = req.params.email;
+
+        // 2. Busca al usuario en la base de datos
+        const usuario = await modelos.Usuario.findOne({ email: email });
+
+        // 3. Si no se encuentra el usuario, envía un error 404
+        if (!usuario) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+        }
+
+        // 4. Si se encuentra, envía los datos (¡SIN LA CONTRASEÑA!)
+        const usuarioParaCliente = {
+            nombre: usuario.nombre,
+            email: usuario.email
+        };
+
+        res.status(200).json(usuarioParaCliente);
+
+    } catch (error) {
+        console.error("Error en obtenerUsuarioPorEmail:", error);
+        res.status(500).json({ mensaje: 'Error interno al buscar el usuario.' });
+    }
+};
+
+
+// ===================================================================
+// @desc    Cambiar la contraseña de un usuario
+// @route   POST /api/usuarios/cambiar-password
+// @access  Privado (debería estar protegido)
+// ===================================================================
+exports.cambiarPassword = async (req, res) => {
+    try {
+        // 1. Obtiene el email y la nueva contraseña del cuerpo de la petición
+        const { email, nuevaPassword } = req.body;
+
+        // 2. Valida que los datos necesarios fueron enviados
+        if (!email || !nuevaPassword) {
+            return res.status(400).json({ mensaje: 'Faltan datos requeridos (email o nuevaPassword).' });
+        }
+
+        // 3. Busca al usuario por su email
+        const usuario = await modelos.Usuario.findOne({ email: email });
+
+        if (!usuario) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado.' });
+        }
+
+        // 4. Actualiza la contraseña del usuario encontrado
+        // En un proyecto real, la 'nuevaPassword' debería ser hasheada antes de guardarla.
+        usuario.password = nuevaPassword;
+        await usuario.save();
+
+        // 5. Envía una respuesta de éxito
+        res.status(200).json({ mensaje: 'Contraseña actualizada exitosamente.' });
+
+    } catch (error) {
+        console.error("Error en cambiarPassword:", error);
+        res.status(500).json({ mensaje: 'Error interno al cambiar la contraseña.' });
+    }
+};
+
 exports.loginUsuario = async (req, res) => {
     // Lógica para el inicio de sesión de un usuario
     try{

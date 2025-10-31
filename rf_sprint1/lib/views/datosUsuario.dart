@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'api_service.dart'; // Asegúrate de que la ruta sea correcta
+import 'package:provider/provider.dart';
+import '../auth_provider.dart';
+import '../services/api_service.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String userEmail; // El ID del usuario que ha iniciado sesión
-
-  const ProfileScreen({super.key, required this.userEmail});
+  const ProfileScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -12,60 +13,113 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late Future<Map<String, dynamic>> _userProfileFuture;
+  // --- CORRECCIÓN: _userProfileFuture debe ser anulable ---
+  // Para que no tengamos que inicializarlo con un valor por defecto.
+  Future<Map<String, dynamic>>? _userProfileFuture;
+  String? _userEmail;
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    // Ejecuta este código después de que el widget se haya construido
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeProfile();
+    });
+  }
+
+  void _initializeProfile() {
+    // Obtiene la instancia del AuthProvider para saber quién es el usuario
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.isLoggedIn && authProvider.userEmail != null) {
+      // Si el usuario está logueado, guardamos su email y cargamos su perfil
+      setState(() {
+        _userEmail = authProvider.userEmail;
+        _loadUserProfile();
+      });
+    } else {
+      // Medida de seguridad: si se llega aquí sin estar logueado, se redirige al login
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
   }
 
   void _loadUserProfile() {
-    _userProfileFuture = ApiService.getUserProfile(widget.userEmail);
+    // Solo carga los datos si tenemos un email
+    if (_userEmail != null) {
+      setState(() {
+        _userProfileFuture = ApiService.getUserProfile(_userEmail!);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // --- CORRECCIÓN: Lógica de construcción invertida y simplificada ---
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mi Perfil'),
         backgroundColor: Colors.deepPurple,
+        actions: [
+          // Botón para cerrar sesión
+          IconButton(
+            tooltip: 'Cerrar Sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              // Llama al método logout del provider
+              Provider.of<AuthProvider>(context, listen: false).logout();
+              // Redirige al usuario a la pantalla de login y limpia el historial de navegación
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    (Route<dynamic> route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/backgrounds/fondo_login.png'),
-            fit: BoxFit.cover, // Para que la imagen cubra todo el espacio
+            fit: BoxFit.cover,
           ),
         ),
-        child: FutureBuilder<Map<String, dynamic>>(
+        // Si aún no hemos obtenido el email o no hemos empezado a cargar, mostramos un loader.
+        child: (_userEmail == null || _userProfileFuture == null)
+            ? const Center(child: CircularProgressIndicator())
+            : FutureBuilder<Map<String, dynamic>>(
           future: _userProfileFuture,
           builder: (context, snapshot) {
+            // Mientras se cargan los datos
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
+            // Si hubo un error de red o de la API
             if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
+              return Center(child: Text('Error al cargar el perfil: ${snapshot.error}'));
             }
+            // Si no hay datos (ej. usuario no encontrado)
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(child: Text('No se encontraron datos del usuario.'));
             }
 
+            // Si todo va bien, obtenemos los datos del usuario.
+            // OJO: Si tu API devuelve { "usuario": { ... } }, debes usar snapshot.data!['usuario']
             final userData = snapshot.data!;
 
             return RefreshIndicator(
-              onRefresh: () async => setState(() => _loadUserProfile()),
+              onRefresh: () async => _loadUserProfile(),
               child: ListView(
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  _buildProfileHeader(userData['nombre'], userData['email']),
+                  _buildProfileHeader(userData['nombre'] ?? 'N/A', userData['email'] ?? 'N/A'),
                   const SizedBox(height: 30),
                   _buildInfoCard(
                     title: 'Información Personal',
                     children: [
-                      _infoTile(Icons.person_outline, 'Nombre', userData['nombre']),
-                      _infoTile(Icons.email_outlined, 'Email', userData['email']),
-                      _infoTile(Icons.password_outlined, 'Contraseña', userData['password'] ),
+                      _infoTile(Icons.person_outline, 'Nombre', userData['nombre'] ?? 'N/A'),
+                      _infoTile(Icons.email_outlined, 'Email', userData['email'] ?? 'N/A'),
+                      // --- CORRECCIÓN: NUNCA muestres la contraseña en la UI ---
+                      _infoTile(Icons.password_outlined, 'Contraseña', '********'),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -89,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- Widgets de la UI ---
+  // --- Widgets de la UI (Sin cambios) ---
 
   Widget _buildProfileHeader(String name, String email) {
     return Column(
@@ -182,8 +236,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-
-                    final result = await ApiService.changePassword(email: widget.userEmail, nuevaPassword: confirmPasswordController.text);
+                  // --- CORRECCIÓN: Usar la variable de estado _userEmail ---
+                  // Nos aseguramos de que _userEmail no sea nulo antes de usarlo.
+                  if (_userEmail != null) {
+                    final result = await ApiService.changePassword(
+                      email: _userEmail!,
+                      nuevaPassword: confirmPasswordController.text,
+                    );
 
                     // ignore: use_build_context_synchronously
                     Navigator.of(context).pop(); // Cierra el diálogo
@@ -191,16 +250,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     // ignore: use_build_context_synchronously
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(result['mensaje']),
+                        content: Text(result['mensaje'] ?? 'Respuesta recibida.'),
                         duration: const Duration(seconds: 4),
+                        backgroundColor: result['statusCode'] == 200 ? Colors.green : Colors.red,
                       ),
                     );
-                    setState(() {
-                      _loadUserProfile();
-                    });
 
-
-
+                    // Vuelve a cargar el perfil para reflejar cualquier cambio (aunque aquí no aplica)
+                    _loadUserProfile();
+                  }
                 }
               },
               child: const Text('Guardar'),
