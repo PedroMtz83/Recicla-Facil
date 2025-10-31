@@ -42,10 +42,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       // Si por alguna razón la respuesta es nula, lo manejamos.
-      if (response == null) {
-        throw Exception('Respuesta inesperada del servidor.');
-      }
-
       // --- ¡NUEVA LÓGICA DE MANEJO DE RESPUESTAS! ---
       // Usamos el statusCode que añadimos en el servicio.
 

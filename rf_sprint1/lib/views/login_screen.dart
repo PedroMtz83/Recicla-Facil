@@ -29,10 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // --- LÓGICA DE UI CORREGIDA ---
       // El servicio ya no puede devolver null bajo esta lógica, pero la comprobación no hace daño.
-      if (response == null) {
-        throw Exception('Respuesta inesperada del servidor.');
-      }
-
       // AHORA SÍ, la UI es responsable de interpretar el mensaje
       if (response['mensaje'] == 'Inicio de sesión exitoso') {
         if (mounted) Navigator.pushReplacementNamed(context, '/home');
