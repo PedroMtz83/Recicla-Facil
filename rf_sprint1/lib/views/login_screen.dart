@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:rf_sprint1/services/usuario_service.dart';
+import '../services/usuario_service.dart';
+import 'package:rf_sprint1/vars.dart';
+
 class LoginScreen extends StatefulWidget {
-   LoginScreen({super.key});
+   const LoginScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -9,55 +11,44 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final usuarioService = UsuarioService();
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
 
-  // En tu archivo 'views/login_screen.dart'
+  String password = '';
+  bool _isLoading = false;
 
   void _login() async {
     if (!_formKey.currentState!.validate()) return;
+
     setState(() => _isLoading = true);
 
     try {
+      final usuarioService = UsuarioService();
       final response = await usuarioService.loginUsuario(
-        nombre: _nombreController.text.trim(),
-        password: _passwordController.text.trim(),
+        nombre: _nombreController.text,
+        password: _passwordController.text,
       );
-
-      // --- LÓGICA DE UI CORREGIDA ---
-      // El servicio ya no puede devolver null bajo esta lógica, pero la comprobación no hace daño.
-      // AHORA SÍ, la UI es responsable de interpretar el mensaje
       if (response['mensaje'] == 'Inicio de sesión exitoso') {
-        if (mounted) Navigator.pushReplacementNamed(context, '/home');
+        debugPrint('Usuario logueado: ${response['usuario']}');
+        // ignore: use_build_context_synchronously
+        Navigator.pushReplacementNamed(context, '/home');
+        email=response['usuario']['email'];
       } else {
-        // Si el mensaje no es de éxito, asumimos que son credenciales incorrectas.
-        // Esta es la lógica de negocio que pertenece a la UI.
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Usuario o contraseña incorrectos')),
-          );
-        }
-      }
-
-    } catch (e) {
-      // Este CATCH ahora atrapa TODOS los errores lanzados desde el servicio:
-      // - TimeoutException -> "Tiempo de espera agotado..."
-      // - SocketException -> "Error de red..."
-      // - Error de Servidor -> "Error del servidor: 500"
-      // - ClientException -> "No se pudo procesar la solicitud..."
-      if (mounted) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+           SnackBar(content: Text('Usuario o contraseña incorrectos')),
         );
       }
-
+    } catch (e) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error de conexión: $e')),
+      );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
-}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Positioned.fill(
             child: Container(
+              // ignore: deprecated_member_use
               color: Colors.black.withOpacity(0.3),
             ),
           ),
@@ -125,6 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Campo de nombre (sin cambios)
                       Container(
                         decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
                           color: Colors.white.withOpacity(0.9),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -150,6 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Campo de contraseña (sin cambios)
                       Container(
                         decoration: BoxDecoration(
+                          // ignore: deprecated_member_use
                           color: Colors.white.withOpacity(0.9),
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -222,17 +216,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
                        SizedBox(height: 20),
 
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/register');
-                        },
-                        child:  Text(
-                          '¿No tienes una cuenta? Registrate',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                           Text(
+                            '¿No tienes cuenta?',
+                            style: TextStyle(color: Colors.white),
                           ),
-                        ),
+                           SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(context, '/register');
+                            },
+                            child:  Text(
+                              'Registrate',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
