@@ -67,8 +67,9 @@ exports.loginUsuario = async (req, res) => {
         // 5. Si TODO es correcto, envía un 200 (OK)
         
         const usuarioParaCliente = {
-            id: usuario.id,
-            nombre: usuario.nombre
+            nombre: usuario.nombre,
+            password: usuario.password,
+            email: usuario.email
         };
         
         res.status(200).json({ 

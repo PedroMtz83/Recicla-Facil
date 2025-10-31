@@ -29,24 +29,46 @@ class _LoginScreenState extends State<LoginScreen> {
         nombre: _nombreController.text,
         password: _passwordController.text,
       );
-      if (response['mensaje'] == 'Inicio de sesión exitoso') {
-        debugPrint('Usuario logueado: ${response['usuario']}');
-        // ignore: use_build_context_synchronously
-        Navigator.pushReplacementNamed(context, '/home');
-        email=response['usuario']['email'];
+      if (!mounted) return;
+      if (response['statusCode'] == 200) {
+
+        final userObject = response['usuario'] as Map<String, dynamic>?;
+
+        if (userObject != null && userObject['email'] != null) {
+          // Guardamos el email obtenido de la respuesta en una variable
+          final String emailDelUsuario = userObject['email'];
+          final String nombreDelUsuario = userObject['nombre'] ?? 'Usuario';
+
+          debugPrint('Login exitoso. Email obtenido: $emailDelUsuario');
+
+          // Ahora puedes usar 'emailDelUsuario' para lo que necesites,
+          // como guardarlo en un provider o pasarlo a la siguiente pantalla.
+          // Ejemplo:
+          // Provider.of<AuthProvider>(context, listen: false).login(emailDelUsuario, nombreDelUsuario);
+
+          Navigator.pushReplacementNamed(context, '/home');
+
+        } else {
+          // La respuesta del servidor no tiene el formato esperado
+          throw Exception('Respuesta inválida del servidor.');
+        }
+
       } else {
-        // ignore: use_build_context_synchronously
+        // Manejo de errores de login (credenciales incorrectas)
+        final errorMessage = response['mensaje'] ?? 'Error desconocido';
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Usuario o contraseña incorrectos')),
+          SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
         );
       }
     } catch (e) {
-      // ignore: use_build_context_synchronously
+      // Manejo de errores de conexión o formato
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error de conexión: $e')),
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
