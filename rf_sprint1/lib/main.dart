@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'views/formulario_screen.dart';
 import 'datosUsuario.dart';
 import 'views/login_screen.dart'; // Asegúrate de que la ruta sea correcta
 import 'vars.dart';
+=======
+import 'views/login_screen.dart';
+>>>>>>> origin/Pedro
 
 void main() {
   runApp(const MyApp());
@@ -19,11 +23,21 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+<<<<<<< HEAD
 
       // --- CAMBIO CLAVE ---
       // Asigna LoginScreen directamente como la pantalla de inicio.
       // Ya no se necesita el Scaffold ni el SizedBox aquí.
       home:  LoginScreen(),
+=======
+      home: const Scaffold(
+        body: SizedBox(
+          width: 533,
+          height: 800,
+          child: LoginScreen(),
+        ),
+      ),
+>>>>>>> origin/Pedro
       debugShowCheckedModeBanner: false,
 
       // Opcional: Si quieres definir rutas nombradas para la navegación

@@ -83,7 +83,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ),
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> origin/Pedro
             // Capa semitransparente
             Container(
               width: double.infinity,
@@ -91,7 +95,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // ignore: deprecated_member_use
               color: Colors.black.withOpacity(0.3),
             ),
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> origin/Pedro
             SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -101,7 +109,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const SizedBox(height: 40),
+<<<<<<< HEAD
 
+=======
+                      
+>>>>>>> origin/Pedro
                       // Logo + Título
                       SizedBox(
                         width: 393,
@@ -111,9 +123,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           fit: BoxFit.contain,
                         ),
                       ),
+<<<<<<< HEAD
 
                       const SizedBox(height: 16),
 
+=======
+                      
+                      const SizedBox(height: 16),
+                      
+>>>>>>> origin/Pedro
                       const Text(
                         'Regístrate',
                         style: TextStyle(
@@ -122,9 +140,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           fontWeight: FontWeight.w300,
                         ),
                       ),
+<<<<<<< HEAD
 
                       const SizedBox(height: 40),
 
+=======
+                      
+                      const SizedBox(height: 40),
+                      
+>>>>>>> origin/Pedro
                       // Campo de nombre de usuario
                       Container(
                         decoration: BoxDecoration(
@@ -309,7 +333,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                       ),
-
+                      
                       const SizedBox(height: 40),
                     ],
                   ),

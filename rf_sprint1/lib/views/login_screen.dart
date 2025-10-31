@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../services/usuario_service.dart';
+<<<<<<< HEAD
 import 'package:reciclafacil/vars.dart';
+=======
+import 'register_screen.dart';
+>>>>>>> origin/Pedro
 
 class LoginScreen extends StatefulWidget {
    LoginScreen({super.key});
@@ -210,20 +214,40 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
+<<<<<<< HEAD
 
                        SizedBox(height: 20),
 
+=======
+                      
+                      const SizedBox(height: 20),
+                      
+                      // HIPERVÍNCULO ACTUALIZADO
+>>>>>>> origin/Pedro
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                            Text(
                             '¿No tienes cuenta?',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
                           ),
+<<<<<<< HEAD
                            SizedBox(width: 8),
                           GestureDetector(
+=======
+                          const SizedBox(width: 8),
+                          InkWell(
+>>>>>>> origin/Pedro
                             onTap: () {
-                              Navigator.pushNamed(context, '/register');
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const RegisterScreen(),
+                                ),
+                              );
                             },
                             child:  Text(
                               'Registrate',
@@ -231,6 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.green,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
