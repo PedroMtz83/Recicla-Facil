@@ -30,7 +30,7 @@ exports.crearUsuario = async (req, res) => {
         // 2. Respuesta de éxito: Código 201 Created
         res.status(201).json({ 
             mensaje: 'Usuario creado con éxito',
-            usuario: { id: nuevoUsuario.id, nombre: nuevoUsuario.nombre }
+            usuario: { nombre: nuevoUsuario.nombre }
         });
 
     } catch (error) {
@@ -134,7 +134,8 @@ exports.loginUsuario = async (req, res) => {
         const usuarioParaCliente = {
             nombre: usuario.nombre,
             password: usuario.password,
-            email: usuario.email
+            email: usuario.email,
+            admin: usuario.admin
         };
         
         res.status(200).json({ 
@@ -202,18 +203,26 @@ exports.eliminarUsuario = async (req, res) => {
 exports.crearQueja = async (req, res) => {
     try {
         // --- ¡CAMBIO CLAVE! Leemos 'correo' y 'mensaje' del cuerpo ---
-        const { mensaje, correo } = req.body;
+        const { correo, categoria, mensaje } = req.body;
 
         // Validamos que los datos necesarios hayan llegado
-        if (!mensaje || !correo) {
-            return res.status(400).json({ mensaje: 'Los campos de mensaje y correo son obligatorios.' });
+        if (!correo) {
+            return res.status(400).json({ mensaje: 'El correo es obligatorio.' });
+        }
+
+        if (!categoria) {
+            return res.status(400).json({ mensaje: 'La categoría es obligatoria.' });
+        }
+
+        if (!mensaje) {
+            return res.status(400).json({ mensaje: 'El mensaje es obligatorio.' });
         }
 
         // Creamos el nuevo documento 'Queja' en la base de datos
         const nuevaQueja = new modelos.Queja({
-            mensaje: mensaje,
-            correo: correo // Guardamos el correo proporcionado
-            // Ya no hay 'usuario: usuarioId' porque no estamos logueados
+            correo: correo, 
+            categoria: categoria,
+            mensaje: mensaje
         });
 
         // Guardamos la nueva queja en la base de datos
@@ -238,12 +247,11 @@ exports.crearQueja = async (req, res) => {
 // =========================================================================
 exports.obtenerMisQuejas = async (req, res) => {
     try {
-        // Obtenemos el ID del usuario desde el middleware de autenticación
-        const usuarioId = req.usuario.id;
+        const correoUsuario = req.params.email;
 
-        // Buscamos todas las quejas que coincidan con el ID del usuario
+        // Buscamos todas las quejas que coincidan con el correo del usuario
         // y las ordenamos de la más reciente a la más antigua.
-        const quejas = await modelos.Queja.find({ usuario: usuarioId }).sort({ fechaCreacion: -1 });
+        const quejas = await modelos.Queja.find({ correo : correoUsuario }).sort({ fechaCreacion: -1 });
 
         res.status(200).json(quejas);
 
@@ -263,13 +271,31 @@ exports.obtenerQuejasPendientes = async (req, res) => {
         // Buscamos todas las quejas con estado 'Pendiente'
         // 'populate' es muy útil aquí: reemplaza el ID del usuario con los datos del usuario (nombre y email).
         const quejasPendientes = await modelos.Queja.find({ estado: 'Pendiente' })
-            .populate('usuario', 'nombre email') // <-- ¡Esto es muy potente!
             .sort({ fechaCreacion: 1 }); // Ordenamos de la más antigua a la más nueva
 
         res.status(200).json(quejasPendientes);
 
     } catch (error) {
         console.error("Error al obtener quejas pendientes:", error);
+        res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    }
+};
+
+exports.obtenerQuejasPorCategoria = async (req, res) => {
+    try {
+      
+        const categoria = decodeURIComponent(req.params.categoria);
+        if (!categoria) {
+            return res.status(400).json({ mensaje: 'La categoría es requerida en la URL.' });
+        }
+        const quejas = await modelos.Queja.find({ categoria: new RegExp(`^${categoria}$`, 'i') })
+            .sort({ fechaCreacion: -1 });
+
+        res.status(200).json(quejas);
+
+
+    } catch (error) {
+        console.error("Error al obtener quejas por categoría:", error);
         res.status(500).json({ mensaje: 'Error interno del servidor.' });
     }
 };
@@ -311,6 +337,25 @@ exports.atenderQueja = async (req, res) => {
     } catch (error) {
         console.error("Error al atender la queja:", error);
         res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    }
+};
+
+// @desc    Eliminar una queja
+// @route   DELETE /api/quejas/:id
+exports.eliminarQueja = async (req, res) => {
+    try {
+        const quejaId = req.params.id;
+
+        const quejaEliminada = await modelos.Queja.findByIdAndDelete(quejaId);
+
+        if (!quejaEliminada) {
+            return res.status(404).json({ mensaje: 'No se encontró una queja con ese ID.' });
+        }
+
+        res.status(200).json({ mensaje: 'Queja eliminada exitosamente.' });
+
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error del servidor al querer eliminar la queja.' });
     }
 };
 

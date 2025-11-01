@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import '../services/usuario_service.dart';
-import 'package:rf_sprint1/vars.dart';
-
 class LoginScreen extends StatefulWidget {
    const LoginScreen({super.key});
 
@@ -40,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Guardamos el email obtenido de la respuesta en una variable
           final String emailDelUsuario = userObject['email'];
           final String nombreDelUsuario = userObject['nombre'] ?? 'Usuario';
-
+          final bool esAdminUsuario = userObject['admin'];
           debugPrint('Login exitoso. Email obtenido: $emailDelUsuario');
 
           // Ahora puedes usar 'emailDelUsuario' para lo que necesites,
@@ -48,7 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // Ejemplo:
           // Provider.of<AuthProvider>(context, listen: false).login(emailDelUsuario, nombreDelUsuario);
           Provider.of<AuthProvider>(context, listen: false)
-              .login(emailDelUsuario, nombreDelUsuario);
+              .login(emailDelUsuario, nombreDelUsuario, esAdminUsuario);
 
           // 4. Navega a la siguiente pantalla.
           Navigator.pushReplacementNamed(context, '/home');

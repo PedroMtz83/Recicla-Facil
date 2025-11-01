@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rf_sprint1/views/datosUsuario.dart';
-import 'package:rf_sprint1/views/formulario_screen.dart';
+import 'package:rf_sprint1/views/quejas_tabs_screen.dart';
 import 'package:rf_sprint1/views/register_screen.dart';
 import 'package:provider/provider.dart';
 import 'auth_provider.dart';
@@ -44,7 +44,6 @@ class MyApp extends StatelessWidget {
       routes: {
         '/home': (context) =>  HomeScreen(), // Asume que tienes un HomeScreen
         '/login':(context) =>  LoginScreen(),
-        '/qys':(context) =>  FormularioScreen(),
         '/register':(context) => RegisterScreen(),
         '/profile':(context) => ProfileScreen(),
         // '/register': (context) => const RegisterScreen(),
@@ -61,6 +60,7 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
@@ -71,43 +71,30 @@ class _HomeScreenState extends State<HomeScreen> {
   // Estos son los "cuerpos" que se mostrarán en el Scaffold.
   final List<Widget> _pages = [
      ProfileScreen(), // Índice 0: Perfil
-     FormularioScreen(), // Índice 1: Quejas y Sugerencias
+     QuejasTabsScreen(), // Índice 1: Quejas y Sugerencias
     // El índice 2 (Cerrar Sesión) no necesita una página, es una acción.
   ];
 
   void _onItemTapped(int index) {
-    // --- PASO 3: Lógica de navegación mejorada ---
-
-    // Si el índice es para cerrar sesión, ejecuta la acción y no cambies de página.
-    if (index == 2) {
-      _cerrarSesion(context);
-    } else {
       // Si es cualquier otra página, actualiza el estado para cambiar el contenido.
       setState(() {
         _currentIndex = index;
       });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // El AppBar puede ser dinámico si quieres, o simplemente mostrar el título general.
-      appBar: AppBar(
-        title: Text(_getAppBarTitle(_currentIndex)),
-        automaticallyImplyLeading: false, // Evita que aparezca un botón de "atrás"
-      ),
       // --- PASO 4: Muestra la página correspondiente al índice actual ---
       // Si el índice es 2 (Cerrar Sesión), mostramos un loader mientras se cierra.
       body: _currentIndex == 2
-          ? const Center(child: CircularProgressIndicator())
+          ?  Center(child: CircularProgressIndicator())
           : _pages[_currentIndex],
 
       bottomNavigationBar: BottomNavigationBar(
-        items: const [
+        items:  [
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
           BottomNavigationBarItem(icon: Icon(Icons.subject), label: "Quejas y sugerencias"),
-          BottomNavigationBarItem(icon: Icon(Icons.logout), label: "Cerrar sesión"),
         ],
         currentIndex: _currentIndex,
         onTap: _onItemTapped, // Llama a la nueva lógica de navegación
@@ -128,15 +115,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Función auxiliar para tener títulos de AppBar dinámicos
-  String _getAppBarTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Mi Perfil';
-      case 1:
-        return 'Quejas y Sugerencias';
-      default:
-        return 'ReciclaFácil';
-    }
-  }
 }

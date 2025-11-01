@@ -107,226 +107,233 @@ class _RegisterScreenState extends State<RegisterScreen> {
               color: Colors.black.withOpacity(0.3),
             ),
             
-            SafeArea(
-              child: SingleChildScrollView(
-                padding:  EdgeInsets.symmetric(horizontal: 24.0),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                       SizedBox(height: 40),
-                      
-                      // Logo + Título
-                      SizedBox(
-                        width: 393,
-                        height: 104,
-                        child: Image.asset(
-                          'assets/images/logos/logo_completo.png',
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      
-                       SizedBox(height: 16),
-                      
-                       Text(
-                        'Regístrate',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                      
-                       SizedBox(height: 40),
-                      
-                      // Campo de nombre de usuario
-                      Container(
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextFormField(
-                          controller: _nombreController,
-                          decoration:  InputDecoration(
-                            labelText: 'Nombre de usuario',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: Icon(Icons.person),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Nombre obligatorio';
-                            }
-                            if (value.length < 3) {
-                              return 'Mínimo 3 caracteres';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      
-                       SizedBox(height: 20),
-                      
-                      // Campo de correo electrónico
-                      Container(
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration:  InputDecoration(
-                            labelText: 'Correo Electrónico',
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: Icon(Icons.email),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Correo electrónico obligatorio';
-                            }
-                            if (!value.contains('@') || !value.contains('.')) {
-                              return 'Ingresa un correo válido';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      
-                       SizedBox(height: 20),
-                      
-                      // Campo de contraseña
-                      Container(
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Contraseña',
-                            border: InputBorder.none,
-                            contentPadding:  EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon:  Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
+            Center(
+              child: SafeArea(
+                child: SingleChildScrollView(
+                  padding:  EdgeInsets.symmetric(horizontal: 24.0),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: 450
+                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                           SizedBox(height: 40),
+
+                          // Logo + Título
+                          SizedBox(
+                            width: 393,
+                            height: 104,
+                            child: Image.asset(
+                              'assets/images/logos/logo_completo.png',
+                              fit: BoxFit.contain,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Contraseña obligatoria';
-                            }
-                            if (value.length < 6) {
-                              return 'Mínimo 6 caracteres';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      
-                       SizedBox(height: 20),
-                      
-                      // Campo de confirmar contraseña
-                      Container(
-                        decoration: BoxDecoration(
-                          // ignore: deprecated_member_use
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          decoration: InputDecoration(
-                            labelText: 'Confirmar Contraseña',
-                            border: InputBorder.none,
-                            contentPadding:  EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon:  Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscureConfirmPassword = !_obscureConfirmPassword;
-                                });
-                              },
+
+                           SizedBox(height: 16),
+
+                           Text(
+                            'Regístrate',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w300,
                             ),
                           ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Confirma tu contraseña';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      
-                       SizedBox(height: 30),
-                      
-                      // Botón Registrarse
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _register,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
+
+                           SizedBox(height: 40),
+
+                          // Campo de nombre de usuario
+                          Container(
+                            decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
+                              color: Colors.white.withOpacity(0.9),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            elevation: 4,
+                            child: TextFormField(
+                              controller: _nombreController,
+                              decoration:  InputDecoration(
+                                labelText: 'Nombre de usuario',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                prefixIcon: Icon(Icons.person),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Nombre obligatorio';
+                                }
+                                if (value.length < 3) {
+                                  return 'Mínimo 3 caracteres';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                          child: _isLoading
-                              ?  SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+
+                           SizedBox(height: 20),
+
+                          // Campo de correo electrónico
+                          Container(
+                            decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
+                              color: Colors.white.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration:  InputDecoration(
+                                labelText: 'Correo Electrónico',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                prefixIcon: Icon(Icons.email),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Correo electrónico obligatorio';
+                                }
+                                if (!value.contains('@') || !value.contains('.')) {
+                                  return 'Ingresa un correo válido';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+
+                           SizedBox(height: 20),
+
+                          // Campo de contraseña
+                          Container(
+                            decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
+                              color: Colors.white.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                labelText: 'Contraseña',
+                                border: InputBorder.none,
+                                contentPadding:  EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                prefixIcon:  Icon(Icons.lock),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
                                   ),
-                                )
-                              :  Text(
-                                  'Registrarse',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
                                 ),
-                        ),
-                      ),
-                      
-                       SizedBox(height: 20),
-                      
-                      // Enlace para volver al login
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        child:  Text(
-                          '¿Ya tienes cuenta? Inicia sesión',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Contraseña obligatoria';
+                                }
+                                if (value.length < 6) {
+                                  return 'Mínimo 6 caracteres';
+                                }
+                                return null;
+                              },
+                            ),
                           ),
-                        ),
+
+                           SizedBox(height: 20),
+
+                          // Campo de confirmar contraseña
+                          Container(
+                            decoration: BoxDecoration(
+                              // ignore: deprecated_member_use
+                              color: Colors.white.withOpacity(0.9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: TextFormField(
+                              controller: _confirmPasswordController,
+                              obscureText: _obscureConfirmPassword,
+                              decoration: InputDecoration(
+                                labelText: 'Confirmar Contraseña',
+                                border: InputBorder.none,
+                                contentPadding:  EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                prefixIcon:  Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                                    });
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Confirma tu contraseña';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+
+                           SizedBox(height: 30),
+
+                          // Botón Registrarse
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _register,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 4,
+                              ),
+                              child: _isLoading
+                                  ?  SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  :  Text(
+                                      'Registrarse',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+
+                           SizedBox(height: 20),
+
+                          // Enlace para volver al login
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushReplacementNamed(context, '/login');
+                            },
+                            child:  Text(
+                              '¿Ya tienes cuenta? Inicia sesión',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+
+                           SizedBox(height: 40),
+                        ],
                       ),
-                      
-                       SizedBox(height: 40),
-                    ],
+                    ),
                   ),
                 ),
               ),

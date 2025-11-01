@@ -4,17 +4,20 @@ import 'package:flutter/material.dart';
 class AuthProvider extends ChangeNotifier {
   String? _userEmail;
   String? _userName;
+  bool _isAdmin = false;
   bool _isLoggedIn = false;
 
   // "Getters" públicos para acceder a los datos de forma segura
   String? get userEmail => _userEmail;
   String? get userName => _userName;
+  bool get isAdmin => _isAdmin;
   bool get isLoggedIn => _isLoggedIn;
 
   // Método que se llamará después de un login exitoso
-  void login(String email, String name) {
+  Future <void> login(String email, String name, bool isAdmin) async{
     _userEmail = email;
     _userName = name;
+    _isAdmin = isAdmin;
     _isLoggedIn = true;
 
     // Notifica a todos los widgets que están "escuchando" que hubo un cambio.
@@ -25,6 +28,7 @@ class AuthProvider extends ChangeNotifier {
   void logout() {
     _userEmail = null;
     _userName = null;
+    _isAdmin = false;
     _isLoggedIn = false;
     notifyListeners();
   }

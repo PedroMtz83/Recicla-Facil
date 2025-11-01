@@ -30,23 +30,25 @@ const usuarioSchema = new mongoose.Schema({
 const quejaSchema = new mongoose.Schema({
      // Este campo solo se usará si un usuario LOGUEADO crea una queja
     // desde otra parte de la app. Para nuestro formulario, será null.
-    usuario: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario',
-        required: false // <-- ¡CAMBIO IMPORTANTE! Ya no es obligatorio.
-    },
-    // --- CAMPO CLAVE PARA EL FORMULARIO PÚBLICO ---
+   
     correo: {
         type: String,
         required: [true, 'El correo del remitente es obligatorio.'],
         trim: true,
         lowercase: true
     },
+    categoria: {
+        type: String,
+        required: [true, 'La categoría no puede estar vacía.'],
+        trim: true
+    },
+
     mensaje: {
         type: String,
         required: [true, 'El mensaje no puede estar vacío.'],
         trim: true
     },
+
     estado: {
         type: String,
         enum: ['Pendiente', 'Atendida'],

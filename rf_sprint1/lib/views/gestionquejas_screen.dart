@@ -1,0 +1,46 @@
+// En un nuevo archivo: screens/gestion_quejas_screen.dart
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:rf_sprint1/auth_provider.dart';
+import 'package:rf_sprint1/views/vistadminquejas_screen.dart';
+import 'package:rf_sprint1/views/vistausuarioquejas_screen.dart';
+
+class GestionQuejasScreen extends StatelessWidget {
+   GestionQuejasScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Escuchamos el AuthProvider para obtener el rol del usuario
+    final authProvider = Provider.of<AuthProvider>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Gestión de Quejas y Sugerencias'),
+        // Opcional: muestra un badge si es admin
+        actions: [
+          if (authProvider.isAdmin)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Chip(
+                label: Text('Admin', style: TextStyle(color: Colors.white)),
+                backgroundColor: Colors.blueAccent,
+              ),
+            )
+        ],
+      ),
+      body: Consumer<AuthProvider>(
+        builder: (context, auth, child) {
+          // Usamos el getter 'isAdmin' que creamos. ¡Es muy limpio!
+          if (auth.isAdmin) {
+            // Si es administrador, muestra la vista de administrador
+            return VistaAdminQuejas();
+          } else {
+            // Si es un usuario normal, muestra su vista de quejas
+            return VistaUsuarioQuejas();
+          }
+        },
+      ),
+    );
+  }
+}

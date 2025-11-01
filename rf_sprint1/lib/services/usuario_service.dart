@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart'; // Para usar debugPrint
 
 class UsuarioService {
-  static const String _apiRoot = 'http://192.168.1.68:3000/api';
+  static const String _apiRoot = 'http://192.168.1.101:3000/api';
 
   // ===================================================================
   // 1. LOGIN de un usuario
