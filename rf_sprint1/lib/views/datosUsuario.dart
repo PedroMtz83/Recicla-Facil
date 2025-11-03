@@ -5,7 +5,7 @@ import '../services/perfil_service.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-   ProfileScreen({super.key});
+  const ProfileScreen({super.key});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -13,38 +13,39 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // --- CORRECCIÓN: _userProfileFuture debe ser anulable ---
-  // Para que no tengamos que inicializarlo con un valor por defecto.
   Future<Map<String, dynamic>>? _userProfileFuture;
   String? _userEmail;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Ejecuta este código después de que el widget se haya construido
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeProfile();
     });
   }
 
   void _initializeProfile() {
-    // Obtiene la instancia del AuthProvider para saber quién es el usuario
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (authProvider.isLoggedIn && authProvider.userEmail != null) {
-      // Si el usuario está logueado, guardamos su email y cargamos su perfil
       setState(() {
         _userEmail = authProvider.userEmail;
         _loadUserProfile();
       });
     } else {
-      // Medida de seguridad: si se llega aquí sin estar logueado, se redirige al login
-      Navigator.of(context).pushReplacementNamed('/login');
+      _redirectToLogin();
     }
   }
 
+  void _redirectToLogin() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
+  }
+
   void _loadUserProfile() {
-    // Solo carga los datos si tenemos un email
     if (_userEmail != null) {
       setState(() {
         _userProfileFuture = PerfilService.getUserProfile(_userEmail!);
@@ -52,151 +53,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // --- CORRECCIÓN: Lógica de construcción invertida y simplificada ---
-    return Scaffold(
-      appBar: AppBar(
-        title:  Text('Mi Perfil'),
-        backgroundColor: Colors.green,
-        actions: [
-          // Botón para cerrar sesión
-          IconButton(
-            tooltip: 'Cerrar Sesión',
-            icon:  Icon(Icons.logout),
-            onPressed: () {
-              // Llama al método logout del provider
-              Provider.of<AuthProvider>(context, listen: false).logout();
-              // Redirige al usuario a la pantalla de login y limpia el historial de navegación
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) =>  LoginScreen()),
-                    (Route<dynamic> route) => false,
-              );
-            },
-          ),
-        ],
-      ),
-      body: Container(
-        decoration:  BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/backgrounds/fondo_login.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        // Si aún no hemos obtenido el email o no hemos empezado a cargar, mostramos un loader.
-        child: (_userEmail == null || _userProfileFuture == null)
-            ?  Center(child: CircularProgressIndicator())
-            : FutureBuilder<Map<String, dynamic>>(
-          future: _userProfileFuture,
-          builder: (context, snapshot) {
-            // Mientras se cargan los datos
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return  Center(child: CircularProgressIndicator());
-            }
-            // Si hubo un error de red o de la API
-            if (snapshot.hasError) {
-              return Center(child: Text('Error al cargar el perfil: ${snapshot.error}'));
-            }
-            // Si no hay datos (ej. usuario no encontrado)
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return  Center(child: Text('No se encontraron datos del usuario.'));
-            }
-
-            // Si todo va bien, obtenemos los datos del usuario.
-            // OJO: Si tu API devuelve { "usuario": { ... } }, debes usar snapshot.data!['usuario']
-            final userData = snapshot.data!;
-
-            return Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: 600
-                ),
-                child: RefreshIndicator(
-                  onRefresh: () async => _loadUserProfile(),
-                  child: ListView(
-                    padding:  EdgeInsets.all(16.0),
-                    children: [
-                      _buildProfileHeader(userData['nombre'] ?? 'N/A', userData['email'] ?? 'N/A'),
-                       SizedBox(height: 30),
-                      _buildInfoCard(
-                        title: 'Información Personal',
-                        children: [
-                          _infoTile(Icons.person_outline, 'Nombre', userData['nombre'] ?? 'N/A'),
-                          _infoTile(Icons.email_outlined, 'Email', userData['email'] ?? 'N/A'),
-                          // --- CORRECCIÓN: NUNCA muestres la contraseña en la UI ---
-                          _infoTile(Icons.password_outlined, 'Contraseña', '********'),
-                        ],
-                      ),
-                       SizedBox(height: 20),
-                      ElevatedButton.icon(
-                        onPressed: () => _showChangePasswordDialog(context),
-                        icon:  Icon(Icons.lock_reset),
-                        label:  Text('Cambiar Contraseña'),
-                        style: ElevatedButton.styleFrom(
-                          padding:  EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+  Future<void> _refreshProfile() async {
+    _loadUserProfile();
   }
-
-  // --- Widgets de la UI (Sin cambios) ---
-
-  Widget _buildProfileHeader(String name, String email) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.lightGreen.shade100,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : 'U',
-            style:  TextStyle(fontSize: 40, color: Colors.black),
-          ),
-        ),
-         SizedBox(height: 10),
-        Text(name, style:  TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        Text(email, style: TextStyle(fontSize: 16, color: Colors.grey.shade600)),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard({required String title, required List<Widget> children}) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding:  EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style:  TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-             Divider(height: 20),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _infoTile(IconData icon, String label, String value) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.deepPurple),
-      title: Text(label, style:  TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(value, style:  TextStyle(fontSize: 16)),
-    );
-  }
-
-  // --- Lógica del Diálogo para Cambiar Contraseña ---
 
   void _showChangePasswordDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
@@ -207,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title:  Text('Cambiar Contraseña'),
+          title: const Text('Cambiar Contraseña'),
           content: Form(
             key: formKey,
             child: Column(
@@ -216,18 +75,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
-                  decoration:  InputDecoration(labelText: 'Contraseña Nueva'),
+                  decoration: const InputDecoration(
+                    labelText: 'Contraseña Nueva',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (val) {
-                    if (val!.isEmpty) return 'Campo requerido';
-                    if (val.length < 4) return 'Debe tener al menos 4 caracteres';
+                    if (val == null || val.isEmpty) return 'Campo requerido';
+                    if (val.length < 6) return 'Debe tener al menos 6 caracteres';
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
-                  decoration:  InputDecoration(labelText: 'Confirmar Contraseña Nueva'),
+                  decoration: const InputDecoration(
+                    labelText: 'Confirmar Contraseña Nueva',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (val) {
+                    if (val == null || val.isEmpty) return 'Campo requerido';
                     if (val != newPasswordController.text) return 'Las contraseñas no coinciden';
                     return null;
                   },
@@ -238,41 +105,325 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child:  Text('Cancelar'),
+              child: const Text('Cancelar'),
             ),
             ElevatedButton(
               onPressed: () async {
                 if (formKey.currentState!.validate()) {
-                  // --- CORRECCIÓN: Usar la variable de estado _userEmail ---
-                  // Nos aseguramos de que _userEmail no sea nulo antes de usarlo.
                   if (_userEmail != null) {
-                    final result = await PerfilService.changePassword(
-                      email: _userEmail!,
-                      nuevaPassword: confirmPasswordController.text,
+                    _changePassword(
+                      context,
+                      newPasswordController.text,
+                      confirmPasswordController.text,
                     );
-
-                    // ignore: use_build_context_synchronously
-                    Navigator.of(context).pop(); // Cierra el diálogo
-
-                    // ignore: use_build_context_synchronously
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result['mensaje'] ?? 'Respuesta recibida.'),
-                        duration:  Duration(seconds: 4),
-                        backgroundColor: result['statusCode'] == 200 ? Colors.green : Colors.red,
-                      ),
-                    );
-
-                    // Vuelve a cargar el perfil para reflejar cualquier cambio (aunque aquí no aplica)
-                    _loadUserProfile();
                   }
                 }
               },
-              child:  Text('Guardar'),
+              child: const Text('Guardar'),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _changePassword(
+    BuildContext context,
+    String newPassword,
+    String confirmPassword,
+  ) async {
+    setState(() => _isLoading = true);
+
+    try {
+      final result = await PerfilService.changePassword(
+        email: _userEmail!,
+        nuevaPassword: newPassword,
+      );
+
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop(); // Cierra el diálogo
+
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['mensaje'] ?? 'Contraseña cambiada exitosamente'),
+          duration: const Duration(seconds: 4),
+          backgroundColor: result['statusCode'] == 200 ? Colors.green : Colors.red,
+        ),
+      );
+
+      if (result['statusCode'] == 200) {
+        // Limpiar campos después de éxito
+        _loadUserProfile();
+      }
+    } catch (e) {
+      // ignore: use_build_context_synchronously
+      Navigator.of(context).pop(); // Cierra el diálogo
+      
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          duration: const Duration(seconds: 4),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Cerrar Sesión'),
+          content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _performLogout(context);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Cerrar Sesión'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performLogout(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.logout();
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false,
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Sesión cerrada exitosamente'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mi Perfil'),
+        backgroundColor: Colors.green,
+        actions: [
+          IconButton(
+            tooltip: 'Cerrar Sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: () => _confirmLogout(context),
+          ),
+        ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/backgrounds/fondo_login.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: (_userEmail == null || _userProfileFuture == null)
+            ? const Center(child: CircularProgressIndicator())
+            : FutureBuilder<Map<String, dynamic>>(
+                future: _userProfileFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return _buildErrorWidget(snapshot.error.toString());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return _buildEmptyWidget();
+                  }
+
+                  final userData = snapshot.data!;
+                  return _buildProfileContent(userData);
+                },
+              ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Error al cargar el perfil',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loadUserProfile,
+              child: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyWidget() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person_off, size: 64, color: Colors.grey),
+          SizedBox(height: 16),
+          Text(
+            'No se encontraron datos del usuario',
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileContent(Map<String, dynamic> userData) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: RefreshIndicator(
+          onRefresh: _refreshProfile,
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              _buildProfileHeader(
+                userData['nombre'] ?? 'N/A',
+                userData['email'] ?? 'N/A',
+              ),
+              const SizedBox(height: 30),
+              _buildInfoCard(
+                title: 'Información Personal',
+                children: [
+                  _infoTile(Icons.person_outline, 'Nombre', userData['nombre'] ?? 'N/A'),
+                  _infoTile(Icons.email_outlined, 'Email', userData['email'] ?? 'N/A'),
+                  _infoTile(Icons.password_outlined, 'Contraseña', '********'),
+                  if (userData['admin'] != null)
+                    _infoTile(
+                      Icons.admin_panel_settings,
+                      'Rol',
+                      userData['admin'] == true ? 'Administrador' : 'Usuario',
+                    ),
+                  if (userData['fechaCreacion'] != null)
+                    _infoTile(
+                      Icons.calendar_today,
+                      'Fecha de Registro',
+                      _formatDate(userData['fechaCreacion']),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ElevatedButton.icon(
+                      onPressed: () => _showChangePasswordDialog(context),
+                      icon: const Icon(Icons.lock_reset),
+                      label: const Text('Cambiar Contraseña'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(String name, String email) {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundColor: Colors.lightGreen.shade100,
+          child: Text(
+            name.isNotEmpty ? name[0].toUpperCase() : 'U',
+            style: const TextStyle(fontSize: 40, color: Colors.black),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          name,
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          email,
+          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard({required String title, required List<Widget> children}) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(height: 20),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String label, String value) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.deepPurple),
+      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: Text(value, style: const TextStyle(fontSize: 16)),
+    );
+  }
+
+  String _formatDate(dynamic date) {
+    try {
+      if (date is String) {
+        return DateTime.parse(date).toString().split(' ')[0];
+      }
+      return date.toString();
+    } catch (e) {
+      return 'Fecha no disponible';
+    }
   }
 }

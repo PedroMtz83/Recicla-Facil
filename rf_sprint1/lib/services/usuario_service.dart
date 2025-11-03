@@ -1,10 +1,66 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async';
-import 'package:flutter/foundation.dart'; // Para usar debugPrint
+import 'package:flutter/foundation.dart';
 
 class UsuarioService {
-  static const String _apiRoot = 'http://192.168.1.101:3000/api';
+  static String _apiRoot = '';
+  static bool _ipInitialized = false;
+
+  // ===================================================================
+  // DETECTAR IP AUTOMÁTICAMENTE (Versión simplificada)
+  // ===================================================================
+  static Future<void> _initializeIP() async {
+    if (_ipInitialized) return;
+    
+    try {
+      // Intentar con IPs comunes en redes locales
+      final commonIPs = [
+        '192.168.1.101',    // Tu IP original
+        '192.168.1.100',    // Otra IP común
+        '10.0.2.2',         // Para Android emulator
+        'localhost',         // Para desarrollo local
+        '127.0.0.1',        // Localhost
+      ];
+      
+      // Probar cada IP hasta encontrar una que funcione
+      for (String ip in commonIPs) {
+        try {
+          final testUrl = Uri.parse('http://$ip:3000/api/usuarios');
+          final response = await http.get(testUrl).timeout(const Duration(seconds: 2));
+          
+          if (response.statusCode == 200) {
+            _apiRoot = 'http://$ip:3000/api';
+            debugPrint('✅ IP detectada automáticamente: $ip');
+            break;
+          }
+        } catch (e) {
+          // Continuar con la siguiente IP
+          debugPrint('❌ IP $ip no disponible: $e');
+        }
+      }
+      
+      // Si ninguna IP funcionó, usar la original como fallback
+      if (_apiRoot.isEmpty) {
+        _apiRoot = 'http://192.168.1.101:3000/api';
+        debugPrint('⚠️  Usando IP por defecto: $_apiRoot');
+      }
+      
+    } catch (e) {
+      _apiRoot = 'http://192.168.1.101:3000/api';
+      debugPrint('❌ Error en detección automática, usando fallback: $_apiRoot');
+    }
+    
+    _ipInitialized = true;
+  }
+
+  // ===================================================================
+  // MÉTODO PARA OBTENER LA URL COMPLETA
+  // ===================================================================
+  static Future<String> _getFullUrl(String endpoint) async {
+    await _initializeIP();
+    return '$_apiRoot/$endpoint';
+  }
 
   // ===================================================================
   // 1. LOGIN de un usuario
@@ -13,7 +69,7 @@ class UsuarioService {
     required String nombre,
     required String password,
   }) async {
-    final url = Uri.parse('$_apiRoot/usuarios/login');
+    final url = Uri.parse(await _getFullUrl('usuarios/login'));
     debugPrint('Haciendo POST a: $url');
 
     try {
@@ -29,6 +85,8 @@ class UsuarioService {
 
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Revisa tu conexión.');
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -40,8 +98,7 @@ class UsuarioService {
     required String email,
     required String password,
   }) async {
-    // --- CORRECCIÓN #2: La ruta para crear es sobre el recurso "usuarios" ---
-    final url = Uri.parse('$_apiRoot/usuarios');
+    final url = Uri.parse(await _getFullUrl('usuarios'));
     debugPrint('Haciendo POST a: $url');
 
     try {
@@ -61,6 +118,8 @@ class UsuarioService {
 
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Revisa tu conexión a internet.');
+    } catch (e) {
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -68,7 +127,7 @@ class UsuarioService {
   // 3. OBTENER todos los usuarios
   // ===================================================================
   Future<List<dynamic>> obtenerUsuarios() async {
-    final url = Uri.parse('$_apiRoot/usuarios');
+    final url = Uri.parse(await _getFullUrl('usuarios'));
     debugPrint('Haciendo GET a: $url');
 
     try {
@@ -85,16 +144,17 @@ class UsuarioService {
       return [];
     }
   }
-  // 3. ACTUALIZAR un usuario por su email (Coincide con `actualizarUsuario`)
+
+  // ===================================================================
+  // 4. ACTUALIZAR un usuario por su email
   // ===================================================================
   Future<bool> actualizarUsuario({
-    required String email, // Email para identificar al usuario
-    String? nombre,       // Datos opcionales a actualizar
+    required String email,
+    String? nombre,
     String? password,
     bool? admin,
   }) async {
-    // URL específica para la actualización, ej: /api/usuarios/test@test.com
-    final Uri url = Uri.parse('$_apiRoot/usuarios/$email');
+    final url = Uri.parse(await _getFullUrl('usuarios/$email'));
 
     final Map<String, dynamic> body = {};
     if (nombre != null) body['nombre'] = nombre;
@@ -126,12 +186,12 @@ class UsuarioService {
   }
 
   // ===================================================================
-  // 4. ELIMINAR un usuario por su email (Coincide con `eliminarUsuario`)
+  // 5. ELIMINAR un usuario por su email
   // ===================================================================
   Future<bool> eliminarUsuario(String email) async {
     try {
-      // El email se añade directamente a la URL, como en tu controlador
-      final response = await http.delete(Uri.parse('$_apiRoot/usuarios/$email'));
+      final url = Uri.parse(await _getFullUrl('usuarios/$email'));
+      final response = await http.delete(url);
       if (response.statusCode == 200) {
         debugPrint('Usuario eliminado exitosamente.');
         return true;

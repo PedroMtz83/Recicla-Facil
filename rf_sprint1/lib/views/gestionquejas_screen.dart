@@ -7,7 +7,7 @@ import 'package:rf_sprint1/views/vistadminquejas_screen.dart';
 import 'package:rf_sprint1/views/vistausuarioquejas_screen.dart';
 
 class GestionQuejasScreen extends StatelessWidget {
-   GestionQuejasScreen({super.key});
+   const GestionQuejasScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

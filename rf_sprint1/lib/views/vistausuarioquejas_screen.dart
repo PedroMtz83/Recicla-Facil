@@ -6,7 +6,7 @@ import '../auth_provider.dart';
 import '../models/queja.dart';
 import '../services/queja_service.dart';
 class VistaUsuarioQuejas extends StatefulWidget {
-   VistaUsuarioQuejas({super.key});
+   const VistaUsuarioQuejas({super.key});
 
   @override
   State<VistaUsuarioQuejas> createState() => _VistaUsuarioQuejasState();
@@ -22,7 +22,7 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
     super.initState();
     // Llama al servicio para obtener las quejas del usuario logueado.
     // El ApiService debería usar el token del AuthProvider para hacer la llamada segura.
-    final QuejaService _quejaService = QuejaService();
+    final QuejaService _ = QuejaService();
   }
 
   @override
