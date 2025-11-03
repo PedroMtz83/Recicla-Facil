@@ -98,7 +98,7 @@ class QuejasTabsScreen extends StatelessWidget {
   void _performLogout(BuildContext context) {
     // Obtener el provider y hacer logout
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.logout();
+    authProvider.cerrarSesion();
 
     // Navegar al login y limpiar el stack de navegación
     Navigator.of(context).pushAndRemoveUntil(

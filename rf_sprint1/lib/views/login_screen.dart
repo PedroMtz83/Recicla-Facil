@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../auth_provider.dart';
 import '../services/usuario_service.dart';
 import 'register_screen.dart';
 
@@ -31,7 +33,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response['statusCode'] == 200) {
         debugPrint('Login exitoso: ${response['usuario']}');
         // ignore: use_build_context_synchronously
-        Navigator.pushReplacementNamed(context, '/home');
+        final userData = response['usuario'] as Map<String, dynamic>;
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+        // Llama al método de login del provider, pasándole la información del usuario
+        // que recibiste del backend. Este método pondrá isLoggedIn=true y llamará a notifyListeners().
+        authProvider.login(
+            userData['email'],
+            userData['nombre'],
+            userData['admin']
+        );
       } else {
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
@@ -51,39 +62,32 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
-        width: 533,
-        height: 800,
-        child: Stack(
+          body: Stack(
           children: [
             // Fondo de pantalla
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/backgrounds/fondo_login.jpg'),
-                  fit: BoxFit.cover,
-                ),
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/backgrounds/fondo_login.png',
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.3),
               ),
             ),
             
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              // ignore: deprecated_member_use
-              color: Colors.black.withOpacity(0.3),
-            ),
-            
-            SafeArea(
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 420),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding:  EdgeInsets.symmetric(horizontal: 24.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 70),
+                       SizedBox(height: 70),
                       
                       SizedBox(
                         width: 393,
@@ -94,9 +98,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 16),
+                       SizedBox(height: 16),
                       
-                      const Text(
+                       Text(
                         'Inicio de sesión',
                         style: TextStyle(
                           fontSize: 18,
@@ -105,7 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 50),
+                       SizedBox(height: 50),
                       
                       // Campo de nombre
                       Container(
@@ -116,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: TextFormField(
                           controller: _nombreController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Nombre de usuario',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -131,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       
                       // Campo de contraseña
                       Container(
@@ -143,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: TextFormField(
                           controller: _passwordController,
                           obscureText: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Contraseña',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -151,14 +155,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Contraseña Obligatorio';
+                              return 'Contraseña Obligatoria';
                             }
                             return null;
                           },
                         ),
                       ),
                       
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
                       
                       // Botón Ingresar
                       SizedBox(
@@ -175,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             elevation: 4,
                           ),
                           child: _isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
@@ -183,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Ingresar',
                                   style: TextStyle(
                                     fontSize: 16,
@@ -193,51 +197,34 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
-                      
-                      TextButton(
-                        onPressed: () {
-                          // Navigator.pushNamed(context, '/forgot-password');
-                        },
-                        child: const Text(
-                          'Olvidé mi contraseña',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // HIPERVÍNCULO ACTUALIZADO
-                      Row(
+                      SizedBox(height: 20),
+                      Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            '¿No tienes cuenta?',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
+
+                          SizedBox(width: 20),
+                          TextButton(
+                            onPressed: () {
+                              // Navigator.pushNamed(context, '/forgot-password');
+                            },
+                            child: Text(
+                              'Olvidé mi contraseña',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RegisterScreen(),
-                                ),
-                              );
+                          SizedBox(height: 20),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pushReplacementNamed(context, '/register');
                             },
-                            child: const Text(
-                              'Registrate',
+                            child:  Text(
+                              '¿No tienes una cuenta? Regístrate',
                               style: TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                                 fontSize: 14,
-                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),
@@ -247,10 +234,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+              ),
             ),
           ],
         ),
-      ),
     );
   }
 
