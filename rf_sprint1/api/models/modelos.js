@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+//modelo para usuarios
 const usuarioSchema = new mongoose.Schema({
     nombre: { 
         type: String, 
@@ -27,10 +28,8 @@ const usuarioSchema = new mongoose.Schema({
     }
 });
 
+//modelo para quejas
 const quejaSchema = new mongoose.Schema({
-     // Este campo solo se usará si un usuario LOGUEADO crea una queja
-    // desde otra parte de la app. Para nuestro formulario, será null.
-   
     correo: {
         type: String,
         required: [true, 'El correo del remitente es obligatorio.'],
@@ -42,13 +41,11 @@ const quejaSchema = new mongoose.Schema({
         required: [true, 'La categoría no puede estar vacía.'],
         trim: true
     },
-
     mensaje: {
         type: String,
         required: [true, 'El mensaje no puede estar vacío.'],
         trim: true
     },
-
     estado: {
         type: String,
         enum: ['Pendiente', 'Atendida'],
@@ -67,7 +64,89 @@ const quejaSchema = new mongoose.Schema({
     }
 });
 
+// Modelo para el contenido educativo
+const contenidoEducativoSchema = new mongoose.Schema({
+    titulo: {
+        type: String,
+        required: [true, 'El título es obligatorio'],
+        trim: true
+    },
+    descripcion: {
+        type: String,
+        required: [true, 'La descripción es obligatoria']
+    },
+    contenido: {
+        type: String,
+        required: [true, 'El contenido es obligatorio']
+    },
+    categoria: {
+        type: String,
+        enum: ['tipos-materiales', 'proceso-reciclaje', 'consejos-practicos', 'preparacion-materiales'],
+        required: [true, 'La categoría es obligatoria']
+    },
+    tipo_material: {
+        type: String,
+        enum: ['plastico', 'vidrio', 'papel', 'metal', 'organico', 'electronico', 'general'],
+        required: [true, 'El tipo de material es obligatorio']
+    },
+    imagenes: [{
+        ruta: {
+            type: String,
+            required: [true, 'La ruta de la imagen es obligatoria']
+        },
+        pie_de_imagen: {
+            type: String,
+            default: ''
+        },
+        es_principal: {
+            type: Boolean,
+            default: false
+        }
+    }],
+    puntos_clave: [{
+        type: String
+    }],
+    acciones_correctas: [{
+        type: String
+    }],
+    acciones_incorrectas: [{
+        type: String
+    }],
+    etiquetas: [{
+        type: String
+    }],
+    publicado: {
+        type: Boolean,
+        default: false
+    },
+    autor: {
+        type: String,
+        default: 'Sistema de Reciclaje Local'
+    },
+    fecha_creacion: {
+        type: Date,
+        default: Date.now
+    },
+    fecha_actualizacion: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// Middleware para actualizar la fecha de actualización antes de guardar
+contenidoEducativoSchema.pre('save', function(next) {
+    this.fecha_actualizacion = Date.now();
+    next();
+});
+
 quejaSchema.index({ usuario: 1, estado: 1 });
+
+// Crear índices para el contenido educativo para optimizar búsquedas
+contenidoEducativoSchema.index({ categoria: 1, publicado: 1 });
+contenidoEducativoSchema.index({ tipo_material: 1 });
+contenidoEducativoSchema.index({ etiquetas: 1 });
+contenidoEducativoSchema.index({ fecha_creacion: -1 });
 
 exports.Usuario = mongoose.model('coleccion_usuarios', usuarioSchema);
 exports.Queja = mongoose.model('coleccion_queja', quejaSchema);
+exports.ContenidoEducativo = mongoose.model('coleccion_contenido_educativo', contenidoEducativoSchema);

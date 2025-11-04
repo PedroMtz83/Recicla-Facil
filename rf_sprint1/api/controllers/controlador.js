@@ -357,5 +357,316 @@ exports.eliminarQueja = async (req, res) => {
     } catch (error) {
         res.status(500).json({ mensaje: 'Error del servidor al querer eliminar la queja.' });
     }
+
+// =========================================================================
+// CONTROLADORES DE CONTENIDO EDUCATIVO
+// =========================================================================
+
+// @desc    Crear nuevo contenido educativo
+// @route   POST /api/contenido-educativo
+// @access  Privado (Admin)
+exports.crearContenidoEducativo = async (req, res) => {
+    try {
+        const {
+            titulo,
+            descripcion,
+            contenido,
+            categoria,
+            tipo_material,
+            imagenes,
+            puntos_clave,
+            acciones_correctas,
+            acciones_incorrectas,
+            etiquetas,
+            publicado
+        } = req.body;
+
+        // Validaciones básicas
+        if (!titulo || !descripcion || !contenido || !categoria || !tipo_material) {
+            return res.status(400).json({ 
+                mensaje: 'Faltan campos obligatorios: título, descripción, contenido, categoría y tipo de material son requeridos.' 
+            });
+        }
+
+        // Validar que al menos haya una imagen principal
+        if (imagenes && imagenes.length > 0) {
+            const tieneImagenPrincipal = imagenes.some(img => img.es_principal === true);
+            if (!tieneImagenPrincipal) {
+                // Si no hay imagen principal, marcar la primera como principal
+                imagenes[0].es_principal = true;
+            }
+        }
+
+        const nuevoContenido = new modelos.ContenidoEducativo({
+            titulo: titulo.trim(),
+            descripcion: descripcion.trim(),
+            contenido: contenido,
+            categoria,
+            tipo_material,
+            imagenes: imagenes || [],
+            puntos_clave: puntos_clave || [],
+            acciones_correctas: acciones_correctas || [],
+            acciones_incorrectas: acciones_incorrectas || [],
+            etiquetas: etiquetas || [],
+            publicado: publicado || false
+        });
+
+        await nuevoContenido.save();
+
+        res.status(201).json({
+            mensaje: 'Contenido educativo creado con éxito.',
+            contenido: nuevoContenido
+        });
+
+    } catch (error) {
+        console.error("Error en crearContenidoEducativo:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al crear el contenido educativo.',
+            error: error.message 
+        });
+    }
 };
 
+// @desc    Obtener todo el contenido educativo (con filtros opcionales)
+// @route   GET /api/contenido-educativo
+// @access  Público
+exports.obtenerContenidoEducativo = async (req, res) => {
+    try {
+        const { 
+            categoria, 
+            tipo_material, 
+            publicado, 
+            etiqueta,
+            limit = 10,
+            page = 1 
+        } = req.query;
+
+        const filtro = {};
+        
+        // Aplicar filtros si se proporcionan
+        if (categoria) filtro.categoria = categoria;
+        if (tipo_material) filtro.tipo_material = tipo_material;
+        if (publicado !== undefined) filtro.publicado = publicado === 'true';
+        if (etiqueta) filtro.etiquetas = { $in: [etiqueta] };
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const contenidos = await modelos.ContenidoEducativo.find(filtro)
+            .sort({ fecha_creacion: -1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        const total = await modelos.ContenidoEducativo.countDocuments(filtro);
+
+        res.status(200).json({
+            contenidos,
+            paginacion: {
+                pagina_actual: parseInt(page),
+                total_paginas: Math.ceil(total / limit),
+                total_contenidos: total,
+                hasNext: (skip + contenidos.length) < total,
+                hasPrev: page > 1
+            }
+        });
+
+    } catch (error) {
+        console.error("Error en obtenerContenidoEducativo:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al obtener el contenido educativo.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Obtener contenido educativo por ID
+// @route   GET /api/contenido-educativo/:id
+// @access  Público
+exports.obtenerContenidoPorId = async (req, res) => {
+    try {
+        const contenidoId = req.params.id;
+        const contenido = await modelos.ContenidoEducativo.findById(contenidoId);
+
+        if (!contenido) {
+            return res.status(404).json({ mensaje: 'Contenido educativo no encontrado.' });
+        }
+
+        res.status(200).json(contenido);
+
+    } catch (error) {
+        console.error("Error en obtenerContenidoPorId:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al obtener el contenido educativo.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Actualizar contenido educativo
+// @route   PUT /api/contenido-educativo/:id
+// @access  Privado (Admin)
+exports.actualizarContenidoEducativo = async (req, res) => {
+    try {
+        const contenidoId = req.params.id;
+        const {
+            titulo,
+            descripcion,
+            contenido,
+            categoria,
+            tipo_material,
+            imagenes,
+            puntos_clave,
+            acciones_correctas,
+            acciones_incorrectas,
+            etiquetas,
+            publicado
+        } = req.body;
+
+        const contenidoExistente = await modelos.ContenidoEducativo.findById(contenidoId);
+        if (!contenidoExistente) {
+            return res.status(404).json({ mensaje: 'Contenido educativo no encontrado.' });
+        }
+
+        // Construir objeto de actualización
+        const update = {};
+        if (titulo !== undefined) update.titulo = titulo.trim();
+        if (descripcion !== undefined) update.descripcion = descripcion.trim();
+        if (contenido !== undefined) update.contenido = contenido;
+        if (categoria !== undefined) update.categoria = categoria;
+        if (tipo_material !== undefined) update.tipo_material = tipo_material;
+        if (imagenes !== undefined) update.imagenes = imagenes;
+        if (puntos_clave !== undefined) update.puntos_clave = puntos_clave;
+        if (acciones_correctas !== undefined) update.acciones_correctas = acciones_correctas;
+        if (acciones_incorrectas !== undefined) update.acciones_incorrectas = acciones_incorrectas;
+        if (etiquetas !== undefined) update.etiquetas = etiquetas;
+        if (publicado !== undefined) update.publicado = publicado;
+
+        const contenidoActualizado = await modelos.ContenidoEducativo.findByIdAndUpdate(
+            contenidoId,
+            update,
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            mensaje: 'Contenido educativo actualizado con éxito.',
+            contenido: contenidoActualizado
+        });
+
+    } catch (error) {
+        console.error("Error en actualizarContenidoEducativo:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al actualizar el contenido educativo.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Eliminar contenido educativo
+// @route   DELETE /api/contenido-educativo/:id
+// @access  Privado (Admin)
+exports.eliminarContenidoEducativo = async (req, res) => {
+    try {
+        const contenidoId = req.params.id;
+        const contenidoEliminado = await modelos.ContenidoEducativo.findByIdAndDelete(contenidoId);
+
+        if (!contenidoEliminado) {
+            return res.status(404).json({ mensaje: 'Contenido educativo no encontrado.' });
+        }
+
+        res.status(200).json({ 
+            mensaje: 'Contenido educativo eliminado exitosamente.' 
+        });
+
+    } catch (error) {
+        console.error("Error en eliminarContenidoEducativo:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al eliminar el contenido educativo.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Obtener contenido por categoría
+// @route   GET /api/contenido-educativo/categoria/:categoria
+// @access  Público
+exports.obtenerContenidoPorCategoria = async (req, res) => {
+    try {
+        const categoria = req.params.categoria;
+        const { publicado = 'true' } = req.query;
+
+        const filtro = { 
+            categoria,
+            publicado: publicado === 'true'
+        };
+
+        const contenidos = await modelos.ContenidoEducativo.find(filtro)
+            .sort({ fecha_creacion: -1 });
+
+        res.status(200).json(contenidos);
+
+    } catch (error) {
+        console.error("Error en obtenerContenidoPorCategoria:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al obtener el contenido por categoría.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Obtener contenido por tipo de material
+// @route   GET /api/contenido-educativo/material/:tipo_material
+// @access  Público
+exports.obtenerContenidoPorTipoMaterial = async (req, res) => {
+    try {
+        const tipo_material = req.params.tipo_material;
+        const { publicado = 'true' } = req.query;
+
+        const filtro = { 
+            tipo_material,
+            publicado: publicado === 'true'
+        };
+
+        const contenidos = await modelos.ContenidoEducativo.find(filtro)
+            .sort({ fecha_creacion: -1 });
+
+        res.status(200).json(contenidos);
+
+    } catch (error) {
+        console.error("Error en obtenerContenidoPorTipoMaterial:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al obtener el contenido por tipo de material.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Buscar contenido educativo por término
+// @route   GET /api/contenido-educativo/buscar/:termino
+// @access  Público
+exports.buscarContenidoEducativo = async (req, res) => {
+    try {
+        const termino = req.params.termino;
+        const { publicado = 'true' } = req.query;
+
+        const filtro = {
+            publicado: publicado === 'true',
+            $or: [
+                { titulo: { $regex: termino, $options: 'i' } },
+                { descripcion: { $regex: termino, $options: 'i' } },
+                { etiquetas: { $in: [new RegExp(termino, 'i')] } }
+            ]
+        };
+
+        const contenidos = await modelos.ContenidoEducativo.find(filtro)
+            .sort({ fecha_creacion: -1 });
+
+        res.status(200).json(contenidos);
+
+    } catch (error) {
+        console.error("Error en buscarContenidoEducativo:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al buscar contenido educativo.',
+            error: error.message 
+        });
+    }
+  }
+};
