@@ -1,5 +1,6 @@
 // En un nuevo archivo: screens/vista_admin_quejas.dart
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../services/queja_service.dart';
 import '../models/queja.dart';
 class VistaAdminQuejas extends StatefulWidget {
@@ -54,68 +55,151 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
     );
   }
 
-  void _atenderQueja(String quejaId) {
-    // Controlador para el campo de texto de la respuesta
+  void _atenderQueja(Queja queja) {
     final respuestaController = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    final DateFormat formato = DateFormat('dd/MM/yyyy - hh:mm a');
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title:  Text('Atender Queja'),
-        content: Form(
-          key: formKey,
-          child: TextFormField(
-            controller: respuestaController,
-            decoration:  InputDecoration(labelText: 'Respuesta para el usuario'),
-            maxLines: 3,
-            validator: (value) => value == null || value.trim().isEmpty
-                ? 'La respuesta no puede estar vacía'
-                : null,
+      builder: (ctx) {
+        return Center(
+          child: SizedBox(
+            // Usamos un ancho ligeramente menor para pantallas muy pequeñas
+            width: MediaQuery.of(context).size.width.clamp(300.0, 500.0),
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              title: Text('Atender Queja'),
+              contentPadding: EdgeInsets.only(top: 20.0), // Padding solo arriba
+
+              content: Card(
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                color: Colors.transparent,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- INFORMACIÓN DE CONTEXTO AÑADIDA ---
+                      _construirInfoSoloLectura(
+                        icon: Icons.calendar_today,
+                        label: 'Fecha de Creación',
+                        value: formato.format(queja.fechaCreacion),
+                      ),
+                      SizedBox(height: 12),
+                      _construirInfoSoloLectura(
+                        icon: Icons.message,
+                        label: 'Mensaje del Usuario',
+                        value: queja.mensaje,
+                      ),
+                      Divider(height: 32, thickness: 0.8), // Separador visual
+
+                      // --- FORMULARIO PARA LA RESPUESTA ---
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Form(
+                          key: formKey,
+                          child: TextFormField(
+                            controller: respuestaController,
+                            decoration: InputDecoration(
+                              labelText: 'Tu Respuesta',
+                              hintText: 'Escribe aquí tu respuesta...',
+                              border: OutlineInputBorder(),
+                            ),
+                            maxLines: 4,
+                            autofocus: true,
+                            validator: (value) => value == null || value.trim().isEmpty
+                                ? 'La respuesta no puede estar vacía'
+                                : null,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24), // Espacio al final del contenido
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text('Cancelar'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    if (formKey.currentState!.validate()) {
+                      // ... (El resto de tu lógica de onPressed no necesita cambios)
+                      if (_isActionLoading) return;
+                      setState(() => _isActionLoading = true);
+                      Navigator.of(ctx).pop();
+                      try {
+                        final resultado = await _quejaService.atenderQueja(
+                            queja.id, // Usamos el id del objeto queja
+                            respuestaController.text);
+                        if (mounted) {
+                          if (resultado['statusCode'] == 200) {
+                            _mostrarSnackBar('Queja atendida correctamente.');
+                            _recargarQuejas();
+                          } else {
+                            _mostrarSnackBar(resultado['mensaje'] ?? 'Error al atender la queja.', esError: true);
+                          }
+                        }
+                      } catch (e) {
+                        if (mounted) _mostrarSnackBar(e.toString(), esError: true);
+                      } finally {
+                        if (mounted) setState(() => _isActionLoading = false);
+                      }
+                    }
+                  },
+                  child: Text('Enviar'),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child:  Text('Cancelar'),
-          ),
-          // Botón para confirmar y enviar la respuesta
-          FilledButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                // Bloquea múltiples clics
-                if (_isActionLoading) return;
-                setState(() => _isActionLoading = true);
-
-                // Cierra el diálogo
-                Navigator.of(ctx).pop();
-
-                try {
-                  final resultado = await _quejaService.atenderQueja(
-                      quejaId, respuestaController.text);
-
-                  if (resultado['statusCode'] == 200) {
-                    _mostrarSnackBar('Queja atendida correctamente.');
-                    _recargarQuejas(); // Actualiza la lista
-                  } else {
-                    _mostrarSnackBar(
-                        resultado['mensaje'] ?? 'Error al atender la queja.',
-                        esError: true);
-                  }
-                } catch (e) {
-                  _mostrarSnackBar(e.toString(), esError: true);
-                } finally {
-                  setState(() => _isActionLoading = false);
-                }
-              }
-            },
-            child:  Text('Enviar Respuesta'),
+        );
+      },
+    );
+  }
+  Widget _construirInfoSoloLectura({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.grey.shade600, size: 20),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: Colors.grey.shade800,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-
   // ==========================================================
   // LÓGICA PARA ELIMINAR QUEJA
   // ==========================================================
@@ -269,7 +353,7 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
                             children: [
                               IconButton(
                                 icon:  Icon(Icons.check_circle_outline, color: Colors.green),
-                                onPressed: () => _atenderQueja(queja.id),
+                                onPressed: () => _atenderQueja(queja),
                                 tooltip: 'Atender Queja',
                               ),
                               IconButton(

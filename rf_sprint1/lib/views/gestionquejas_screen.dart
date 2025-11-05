@@ -16,7 +16,7 @@ class GestionQuejasScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gestión de Quejas y Sugerencias'),
+        title: Text('Historial'),
         // Opcional: muestra un badge si es admin
         actions: [
           if (authProvider.isAdmin)

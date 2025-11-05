@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // Verificar que las contraseñas coincidan
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Las contraseñas no coinciden')),
+        SnackBar(content: Text('Las contraseñas no coinciden')),
       );
       return;
     }
@@ -43,7 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (response['statusCode'] == 201) {
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro exitoso')),
+          SnackBar(content: Text('Registro exitoso')),
         );
         // Regresar al login después de registro exitoso
         // ignore: use_build_context_synchronously
@@ -67,18 +67,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SizedBox(
-        width: 533,
-        height: 800,
-        child: Stack(
+      body: Stack(
           children: [
             // Fondo de pantalla (mismo que login)
             Container(
               width: double.infinity,
               height: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage('assets/images/backgrounds/fondo_login.jpg'),
+                  image: AssetImage('assets/images/backgrounds/fondo_login.png'),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -92,15 +89,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               color: Colors.black.withOpacity(0.3),
             ),
             
-            SafeArea(
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 420),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                       
                       // Logo + Título
                       SizedBox(
@@ -112,9 +111,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       
-                      const Text(
+                      Text(
                         'Regístrate',
                         style: TextStyle(
                           fontSize: 18,
@@ -123,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                       
                       // Campo de nombre de usuario
                       Container(
@@ -134,7 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: TextFormField(
                           controller: _nombreController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Nombre de usuario',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -152,7 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       
                       // Campo de correo electrónico
                       Container(
@@ -164,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Correo Electrónico',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -182,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       
                       // Campo de contraseña
                       Container(
@@ -197,8 +196,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: const Icon(Icons.lock),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: Icon(Icons.lock),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword ? Icons.visibility : Icons.visibility_off,
@@ -222,7 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       
                       // Campo de confirmar contraseña
                       Container(
@@ -237,8 +236,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           decoration: InputDecoration(
                             labelText: 'Confirmar Contraseña',
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                            prefixIcon: const Icon(Icons.lock_outline),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            prefixIcon: Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
@@ -259,7 +258,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
                       
                       // Botón Registrarse
                       SizedBox(
@@ -276,7 +275,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             elevation: 4,
                           ),
                           child: _isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
@@ -284,7 +283,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Registrarse',
                                   style: TextStyle(
                                     fontSize: 16,
@@ -294,14 +293,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                       
                       // Enlace para volver al login
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context);
                         },
-                        child: const Text(
+                        child: Text(
                           '¿Ya tienes cuenta? Inicia sesión',
                           style: TextStyle(
                             color: Colors.white,
@@ -310,15 +309,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                     ],
                   ),
                 ),
               ),
             ),
+            ),
           ],
         ),
-      ),
     );
   }
 

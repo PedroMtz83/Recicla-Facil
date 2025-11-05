@@ -1,66 +1,39 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/queja.dart';
 
 class QuejaService {
-  static String _apiRoot = '';
   static bool _ipInitialized = false;
 
   // ===================================================================
   // DETECTAR IP AUTOMÁTICAMENTE
   // ===================================================================
-  static Future<void> _initializeIP() async {
-    if (_ipInitialized) return;
-    
-    try {
-      // Intentar con IPs comunes en redes locales
-      final commonIPs = [
-        '192.168.1.101',    // Tu IP original
-        '192.168.1.100',    // Otra IP común
-        '10.0.2.2',         // Para Android emulator
-        'localhost',         // Para desarrollo local
-        '127.0.0.1',        // Localhost
-      ];
-      
-      // Probar cada IP hasta encontrar una que funcione
-      for (String ip in commonIPs) {
-        try {
-          final testUrl = Uri.parse('http://$ip:3000/api/quejas');
-          final response = await http.get(testUrl).timeout(const Duration(seconds: 2));
-          
-          if (response.statusCode == 200) {
-            _apiRoot = 'http://$ip:3000/api';
-            debugPrint(' IP detectada automáticamente para QuejaService: $ip');
-            break;
-          }
-        } catch (e) {
-          // Continuar con la siguiente IP
-          debugPrint(' IP $ip no disponible para QuejaService: $e');
-        }
-      }
-      
-      // Si ninguna IP funcionó, usar la original como fallback
-      if (_apiRoot.isEmpty) {
-        _apiRoot = 'http://192.168.1.101:3000/api';
-        debugPrint('  Usando IP por defecto para QuejaService: $_apiRoot');
-      }
-      
-    } catch (e) {
-      _apiRoot = 'http://192.168.1.101:3000/api';
-      debugPrint(' Error en detección automática, usando fallback: $_apiRoot');
-    }
-    
-    _ipInitialized = true;
-  }
+  static const String _direccionIpLocal = '192.168.1.101'; // <- CAMBIA ESTO POR TU IP
 
-  // ===================================================================
-  // MÉTODO PARA OBTENER LA URL COMPLETA
-  // ===================================================================
-  static Future<String> _getFullUrl(String endpoint) async {
-    await _initializeIP();
-    return '$_apiRoot/quejas/$endpoint';
+  // 2. LÓGICA DE ASIGNACIÓN: Este getter elige la IP correcta según la plataforma.
+  static String get _apiRoot {
+    // ASIGNACIÓN PARA WEB:
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
+    }
+
+    // ASIGNACIÓN PARA MÓVIL (Android):
+    try {
+      if (Platform.isAndroid) {
+        // En el emulador de Android, se "asigna" la IP especial del alias.
+        return 'http://10.0.2.2:3000/api';
+      }
+    } catch (e) {
+      // Fallback por si 'Platform' no está disponible.
+      return 'http://localhost:3000/api';
+    }
+
+    // ASIGNACIÓN PARA MÓVIL (iOS o dispositivo físico):
+    // Se "asigna" la IP de desarrollo configurada manualmente.
+    return 'http://$_direccionIpLocal:3000/api';
   }
 
   // ===================================================================
@@ -71,7 +44,7 @@ class QuejaService {
     required String categoria,
     required String mensaje
   }) async {
-    final url = Uri.parse(await _getFullUrl(''));
+    final url = Uri.parse('$_apiRoot/quejas');
     debugPrint('QuejaService - Creando queja en: $url');
 
     try {
@@ -102,7 +75,7 @@ class QuejaService {
   // 2. OBTENER MIS QUEJAS
   // ===================================================================
   Future<List<Queja>> obtenerMisQuejas(String email) async {
-    final url = Uri.parse(await _getFullUrl('mis-quejas/$email'));
+    final url = Uri.parse('$_apiRoot/quejas/mis-quejas/$email');
     debugPrint('QuejaService - Obteniendo mis quejas en: $url');
 
     try {
@@ -127,7 +100,7 @@ class QuejaService {
   // ===================================================================
   Future<List<Queja>> obtenerQuejasPorCategoria(String categoria) async {
     final String categoriaCodificada = Uri.encodeComponent(categoria);
-    final url = Uri.parse(await _getFullUrl('categoria/$categoriaCodificada'));
+    final url = Uri.parse('$_apiRoot/quejas/categoria/$categoriaCodificada');
     debugPrint('QuejaService - Obteniendo quejas por categoría en: $url');
 
     try {
@@ -151,7 +124,7 @@ class QuejaService {
   // 4. OBTENER QUEJAS PENDIENTES
   // ===================================================================
   Future<List<Queja>> obtenerQuejasPendientes() async {
-    final url = Uri.parse(await _getFullUrl('pendientes'));
+    final url = Uri.parse('$_apiRoot/quejas/pendientes');
     debugPrint('QuejaService - Obteniendo quejas pendientes en: $url');
 
     try {
@@ -175,7 +148,7 @@ class QuejaService {
   // 5. ATENDER QUEJA
   // ===================================================================
   Future<Map<String, dynamic>> atenderQueja(String quejaId, String respuestaAdmin) async {
-    final url = Uri.parse(await _getFullUrl(quejaId));
+    final url = Uri.parse('$_apiRoot/quejas/quejaId');
     debugPrint('QuejaService - Atendiendo queja en: $url');
 
     try {
@@ -200,7 +173,7 @@ class QuejaService {
   // 6. ELIMINAR QUEJA
   // ===================================================================
   Future<Map<String, dynamic>> eliminarQueja(String quejaId) async {
-    final url = Uri.parse(await _getFullUrl(quejaId));
+    final url = Uri.parse('$_apiRoot/quejas/quejaId');
     debugPrint('QuejaService - Eliminando queja en: $url');
 
     try {

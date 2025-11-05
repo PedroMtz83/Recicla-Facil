@@ -40,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _redirectToLogin() {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      MaterialPageRoute(builder: (context) => LoginScreen()),
       (Route<dynamic> route) => false,
     );
   }
@@ -66,7 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Cambiar Contraseña'),
+          title: Text('Cambiar Contraseña'),
           content: Form(
             key: formKey,
             child: Column(
@@ -75,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Contraseña Nueva',
                     border: OutlineInputBorder(),
                   ),
@@ -85,11 +85,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Confirmar Contraseña Nueva',
                     border: OutlineInputBorder(),
                   ),
@@ -105,7 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              child: Text('Cancelar'),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -119,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 }
               },
-              child: const Text('Guardar'),
+              child: Text('Guardar'),
             ),
           ],
         );
@@ -147,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['mensaje'] ?? 'Contraseña cambiada exitosamente'),
-          duration: const Duration(seconds: 4),
+          duration: Duration(seconds: 4),
           backgroundColor: result['statusCode'] == 200 ? Colors.green : Colors.red,
         ),
       );
@@ -164,7 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: $e'),
-          duration: const Duration(seconds: 4),
+          duration: Duration(seconds: 4),
           backgroundColor: Colors.red,
         ),
       );
@@ -173,25 +173,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _confirmLogout(BuildContext context) {
+  void _confirmarCerrarSesion(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) { // Usar dialogContext es una buena práctica
         return AlertDialog(
-          title: const Text('Cerrar Sesión'),
-          content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-          actions: [
+          title: Text('Cerrar Sesión'),
+          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
+          actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Cierra el diálogo
+              },
+              child: Text('Cancelar'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                _performLogout(context);
+                // Primero cerramos el diálogo para evitar problemas de contexto
+                Navigator.of(dialogContext).pop();
+
+                // Luego, ejecutamos la lógica de logout
+                _hacerCerrarSesion(context);
               },
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Cerrar Sesión'),
+              child: Text('Cerrar Sesión'),
             ),
           ],
         );
@@ -199,92 +204,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _performLogout(BuildContext context) {
+  void _hacerCerrarSesion(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.logout();
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (Route<dynamic> route) => false,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Sesión cerrada exitosamente'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    authProvider.cerrarSesion();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Perfil'),
+        title: Text('Mi Perfil'),
         backgroundColor: Colors.green,
         actions: [
           IconButton(
             tooltip: 'Cerrar Sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: () => _confirmLogout(context),
+            icon: Icon(Icons.logout),
+            onPressed: () => _confirmarCerrarSesion(context),
           ),
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/backgrounds/fondo_login.png'),
             fit: BoxFit.cover,
           ),
         ),
         child: (_userEmail == null || _userProfileFuture == null)
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : FutureBuilder<Map<String, dynamic>>(
                 future: _userProfileFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return Center(child: CircularProgressIndicator());
                   }
 
                   if (snapshot.hasError) {
-                    return _buildErrorWidget(snapshot.error.toString());
+                    return _construirWidgetError(snapshot.error.toString());
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return _buildEmptyWidget();
+                    return _construirWidgetVacio();
                   }
 
                   final userData = snapshot.data!;
-                  return _buildProfileContent(userData);
+                  return _construirContenidoPerfil(userData);
                 },
               ),
       ),
     );
   }
 
-  Widget _buildErrorWidget(String error) {
+  Widget _construirWidgetError(String error) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: EdgeInsets.all(20.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
+            Icon(Icons.error_outline, size: 64, color: Colors.red),
+            SizedBox(height: 16),
+            Text(
               'Error al cargar el perfil',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               error,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Colors.red),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: _loadUserProfile,
-              child: const Text('Reintentar'),
+              child: Text('Reintentar'),
             ),
           ],
         ),
@@ -292,8 +285,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildEmptyWidget() {
-    return const Center(
+  Widget _construirWidgetVacio() {
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -308,21 +301,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileContent(Map<String, dynamic> userData) {
+  Widget _construirContenidoPerfil(Map<String, dynamic> userData) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
+        constraints: BoxConstraints(maxWidth: 600),
         child: RefreshIndicator(
           onRefresh: _refreshProfile,
           child: ListView(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0),
             children: [
-              _buildProfileHeader(
-                userData['nombre'] ?? 'N/A',
-                userData['email'] ?? 'N/A',
-              ),
-              const SizedBox(height: 30),
-              _buildInfoCard(
+              SizedBox(height: 30),
+              _construirInfoCard(
                 title: 'Información Personal',
                 children: [
                   _infoTile(Icons.person_outline, 'Nombre', userData['nombre'] ?? 'N/A'),
@@ -338,19 +327,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _infoTile(
                       Icons.calendar_today,
                       'Fecha de Registro',
-                      _formatDate(userData['fechaCreacion']),
+                      _formatoFecha(userData['fechaCreacion']),
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(child: CircularProgressIndicator())
                   : ElevatedButton.icon(
                       onPressed: () => _showChangePasswordDialog(context),
-                      icon: const Icon(Icons.lock_reset),
-                      label: const Text('Cambiar Contraseña'),
+                      icon: Icon(Icons.lock_reset),
+                      label: Text('Cambiar Contraseña'),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        padding: EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -363,44 +352,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileHeader(String name, String email) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 50,
-          backgroundColor: Colors.lightGreen.shade100,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : 'U',
-            style: const TextStyle(fontSize: 40, color: Colors.black),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          name,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          email,
-          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoCard({required String title, required List<Widget> children}) {
+  Widget _construirInfoCard({required String title, required List<Widget> children}) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const Divider(height: 20),
+            Divider(height: 20),
             ...children,
           ],
         ),
@@ -411,12 +376,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _infoTile(IconData icon, String label, String value) {
     return ListTile(
       leading: Icon(icon, color: Colors.deepPurple),
-      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 16)),
+      title: Text(label, style: TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: Text(value, style: TextStyle(fontSize: 16)),
     );
   }
 
-  String _formatDate(dynamic date) {
+  String _formatoFecha(dynamic date) {
     try {
       if (date is String) {
         return DateTime.parse(date).toString().split(' ')[0];
