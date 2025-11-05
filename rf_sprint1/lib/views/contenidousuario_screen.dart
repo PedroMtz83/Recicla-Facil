@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/contenido_educativo.dart';
 import '../services/contenido_edu_service.dart';
-import '../widgets/detalle_contenido_dialog.dart';
+import 'contenidodetalle_screen.dart';
 
 enum TipoBusqueda { porTermino, porCategoria, porTipoMaterial }
 
@@ -97,10 +97,16 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
                   padding: EdgeInsets.all(16.0),
                   itemCount: contenidos.length,
                   itemBuilder: (context, index) {
-                    final contenido = contenidos[index];
-                    return InkWell(
+                    final contenido = contenidos[index];return InkWell(
                       onTap: () {
-                        _mostrarDetallesDialog(context, contenido);
+                        debugPrint("Navegando a detalles para el contenido con ID: ${contenido.id}");
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ContenidoDetalleScreen(contenidoId: contenido.id),
+                          ),
+                        );
                       },
                       child: _buildContenidoCard(contenido),
                     );
@@ -111,26 +117,6 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  void _mostrarDetallesDialog(BuildContext context, ContenidoEducativo contenido) {
-    final String? imagenRelativaUrl = contenido.imagenPrincipal;
-    String? imagenCompletaUrl;
-
-    if (imagenRelativaUrl != null && imagenRelativaUrl.isNotEmpty) {
-      imagenCompletaUrl = ContenidoEduService.serverBaseUrl + imagenRelativaUrl;
-    }
-
-    // Opcional: Imprime la URL para depurar el diálogo también.
-    debugPrint("Abriendo diálogo para '${contenido.titulo}' con URL: $imagenCompletaUrl");
-    // ====================================================================
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return DetalleContenidoDialog(contenido: contenido);
-      },
     );
   }
 
@@ -223,90 +209,140 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
 
   Widget _buildContenidoCard(ContenidoEducativo contenido) {
     final String? urlOPath = contenido.imagenPrincipal;
-    String? imagenFinalUrl; // Renombramos la variable para mayor claridad
+    String? imagenFinalUrl;
 
-    // ====================== LÓGICA CORREGIDA ======================
     if (urlOPath != null && urlOPath.isNotEmpty) {
-      // Si la ruta ya es una URL completa (empieza con http), úsala directamente.
       if (urlOPath.startsWith('http')) {
         imagenFinalUrl = urlOPath;
       } else {
-        // Si es una ruta relativa (empieza con '/'), construye la URL completa.
         imagenFinalUrl = ContenidoEduService.serverBaseUrl + urlOPath;
       }
     }
-    // =============================================================
-
     debugPrint("URL final para la tarjeta '${contenido.titulo}': $imagenFinalUrl");
 
     return Card(
-      elevation: 3.0,
-      margin: const EdgeInsets.only(bottom: 20.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      elevation: 4.0,
+      margin: EdgeInsets.only(bottom: 24.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 2. Comprueba si la URL existe ANTES de intentar usar Image.network
           if (imagenFinalUrl != null)
             Image.network(
-              imagenFinalUrl, // La URL que estamos probando
+              imagenFinalUrl,
               height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
-              // 3. Este loadingBuilder es bueno para la experiencia de usuario
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return Container(
                   height: 200,
                   color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator()),
+                  child:  Center(child: CircularProgressIndicator()),
                 );
               },
-              // 4. ¡ESTE ES EL SALVAVIDAS! Evita que la app se congele si la imagen no carga.
               errorBuilder: (context, error, stackTrace) {
-                // Imprime el error específico para esta imagen en la consola.
                 debugPrint("FALLO AL CARGAR IMAGEN: $imagenFinalUrl - Error: $error");
-                // Devuelve un widget placeholder en lugar de romper la UI.
                 return Container(
                   height: 200,
                   color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
+                  child:  Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
                 );
               },
             )
           else
-          // 5. Muestra un placeholder si el registro no tiene imagen.
             Container(
               height: 200,
               color: Colors.grey[200],
-              child: const Icon(Icons.photo, color: Colors.grey, size: 50),
+              child: Icon(Icons.photo, color: Colors.grey, size: 50),
             ),
 
-          // El resto de la tarjeta (título, descripción) no necesita cambios
           Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   contenido.titulo,
-                  style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8.0),
+                SizedBox(height: 8.0),
                 Text(
                   contenido.descripcion,
-                  style: TextStyle(fontSize: 14.0, color: Colors.grey[700]),
+                  style: TextStyle(fontSize: 15.0, color: Colors.grey[700], height: 1.4), // Mejor interlineado
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Wrap(
+              spacing: 8.0,
+              runSpacing: 4.0,
+              children: [
+                Chip(
+                  label: Text(contenido.categoria),
+                  avatar: Icon(Icons.category_outlined, size: 18),
+                  backgroundColor: Colors.blue.shade50,
+                  labelStyle: TextStyle(color: Colors.blue.shade800),
+                  side: BorderSide(color: Colors.blue.shade100),
+                ),
+                Chip(
+                  label: Text(contenido.tipoMaterial),
+                  avatar: Icon(Icons.inventory_2_outlined, size: 18),
+                  backgroundColor: Colors.teal.shade50,
+                  labelStyle: TextStyle(color: Colors.teal.shade800),
+                  side: BorderSide(color: Colors.teal.shade100),
+                ),
+              ],
+            ),
+          ),
+
+          if (contenido.puntosClave.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Divider(thickness: 1),
+                  SizedBox(height: 8.0),
+                  Text(
+                    "Puntos Clave",
+                    style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                  ),
+                  SizedBox(height: 8.0),
+                  Column(
+                    children: contenido.puntosClave.map((punto) {
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                            SizedBox(width: 8.0),
+                            Expanded(
+                              child: Text(
+                                punto,
+                                style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
+
 }

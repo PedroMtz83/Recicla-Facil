@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:rf_sprint1/views/contenidousuario_screen.dart';
 import 'package:rf_sprint1/views/contenido_screen.dart';
-import 'package:rf_sprint1/views/contenidoadmin_screen.dart';
 
 // Importa tus vistas y providers
 import 'package:rf_sprint1/views/perfilUsuario_screen.dart';

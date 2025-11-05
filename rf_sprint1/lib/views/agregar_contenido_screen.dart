@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/contenido_edu_service.dart';
-import '../models/contenido_educativo.dart';
 
 class AgregarContenidoScreen extends StatefulWidget {
   const AgregarContenidoScreen({super.key});
