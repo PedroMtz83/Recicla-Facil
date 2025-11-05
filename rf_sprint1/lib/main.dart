@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:rf_sprint1/views/contenidousuario_screen.dart';
+import 'package:rf_sprint1/views/contenido_screen.dart';
+import 'package:rf_sprint1/views/contenidoadmin_screen.dart';
 
 // Importa tus vistas y providers
 import 'package:rf_sprint1/views/perfilUsuario_screen.dart';
@@ -24,9 +28,6 @@ void main() {
     ),
   );
 }
-
-// El rol de MyApp ahora es leer el estado de los providers y construir
-// el MaterialApp en consecuencia. Ya no crea estado, solo lo consume.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -74,29 +75,122 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
-    ProfileScreen(), // Índice 0: Perfil
-    QuejasTabsScreen(), // Índice 1: Quejas y Sugerencias
+    ProfileScreen(),
+    QuejasTabsScreen(),
+    ContenidoScreen()
+  ];
+
+  final List<String> _pageTitles = [
+    "Mi perfil",
+    "Quejas y sugerencias",
+    'Contenido informativo'
   ];
 
   void _onItemTapped(int index) {
-      setState(() {
-        _currentIndex = index;
-      });
+    setState(() {
+      _currentIndex = index;
+    });
+    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
-          BottomNavigationBarItem(icon: Icon(Icons.subject), label: "Quejas"),
+      appBar: AppBar(
+        title: Text(_pageTitles[_currentIndex]),
+        backgroundColor: Colors.green,
+        elevation: 4.0,
+        actions: [
+          IconButton(
+            tooltip: 'Cerrar Sesión',
+            icon: Icon(Icons.logout),
+            onPressed: () => _confirmarCerrarSesion(context),
+          ),
         ],
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
       ),
+
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.green,
+              ),
+              child: Text(
+                'Menú de Navegación',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text('Perfil'),
+              selected: _currentIndex == 0,
+              selectedTileColor: Colors.green.withOpacity(0.1), // Color de fondo cuando está seleccionado.
+              onTap: () {
+                _onItemTapped(0);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.subject),
+              title: Text('Quejas'),
+              selected: _currentIndex == 1,
+              selectedTileColor: Colors.green.withOpacity(0.1),
+              onTap: () {
+                _onItemTapped(1);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.info),
+              title: Text('Contenido informativo'),
+              selected: _currentIndex == 2,
+              selectedTileColor: Colors.green.withOpacity(0.1),
+              onTap: () {
+                _onItemTapped(2);
+              },
+            ),
+          ],
+        ),
+      ),
+      body: _pages[_currentIndex],
     );
+  }
+
+  void _confirmarCerrarSesion(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Cerrar Sesión'),
+          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+
+                _hacerCerrarSesion(context);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text('Cerrar sesión'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _hacerCerrarSesion(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.cerrarSesion();
   }
 
 }

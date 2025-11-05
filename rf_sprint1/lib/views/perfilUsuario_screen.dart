@@ -173,56 +173,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _confirmarCerrarSesion(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) { // Usar dialogContext es una buena práctica
-        return AlertDialog(
-          title: Text('Cerrar Sesión'),
-          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(); // Cierra el diálogo
-              },
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Primero cerramos el diálogo para evitar problemas de contexto
-                Navigator.of(dialogContext).pop();
-
-                // Luego, ejecutamos la lógica de logout
-                _hacerCerrarSesion(context);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text('Cerrar Sesión'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _hacerCerrarSesion(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.cerrarSesion();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Mi Perfil'),
-        backgroundColor: Colors.green,
-        actions: [
-          IconButton(
-            tooltip: 'Cerrar Sesión',
-            icon: Icon(Icons.logout),
-            onPressed: () => _confirmarCerrarSesion(context),
-          ),
-        ],
-      ),
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
