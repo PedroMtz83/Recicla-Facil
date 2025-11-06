@@ -42,13 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _userEmail = authProvider.userEmail;
     try {
       final userData = await PerfilService.getUserProfile(_userEmail!);
-      print("========================================================");
-      print("PASO DE DEPURACIÓN: DATOS RECIBIDOS DEL PERFIL");
-      print("TIPO DE DATO CRUDO: ${userData.runtimeType}");
-      print("CONTENIDO CRUDO: $userData");
-      print("VALOR DEL CAMPO 'admin': ${userData['admin']}");
-      print("TIPO DEL CAMPO 'admin': ${userData['admin'].runtimeType}");
-      print("========================================================");
       setState(() {
         _userData = userData;
         final adminValue = userData['admin'];
