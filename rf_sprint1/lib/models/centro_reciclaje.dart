@@ -21,7 +21,6 @@ class CentroReciclaje {
     required this.horario,
   });
 
-  // Constructor desde JSON
   factory CentroReciclaje.fromJson(Map<String, dynamic> json) {
     return CentroReciclaje(
       nombre: json['nombre'],

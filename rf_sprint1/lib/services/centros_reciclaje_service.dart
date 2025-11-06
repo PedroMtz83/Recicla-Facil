@@ -1,8 +1,6 @@
-import 'dart:convert';
 import '../models/centro_reciclaje.dart';
 
 class CentrosReciclajeService {
-  // Datos hardcodeados basados en tu JSON
   static final List<CentroReciclaje> centros = [
     CentroReciclaje(
       nombre: "Centro de Reciclaje La Loma",
@@ -10,7 +8,7 @@ class CentrosReciclajeService {
       latitud: 21.51284,
       longitud: -104.89521,
       icono: "assets/iconos/recycle_plastic.png",
-      tipoMaterial: ["Plástico", "Vidrio"],
+      tipoMaterial: ["PET", "Vidrio"],
       direccion: "Av. Insurgentes 1450, Col. La Loma, Tepic, Nayarit",
       telefono: "311 212 3456",
       horario: "Lunes a Viernes: 9:00 - 17:00",
@@ -21,7 +19,7 @@ class CentrosReciclajeService {
       latitud: 21.47655,
       longitud: -104.87212,
       icono: "assets/iconos/recycle_general.png",
-      tipoMaterial: ["Papel", "Cartón", "Plástico"],
+      tipoMaterial: ["Papel", "Cartón", "PET"],
       direccion: "Parque Metropolitano, Av. del Parque S/N, Tepic, Nayarit",
       telefono: "311 225 6789",
       horario: "Sábados y Domingos: 8:00 - 14:00",
@@ -54,7 +52,7 @@ class CentrosReciclajeService {
       latitud: 21.48089,
       longitud: -104.86544,
       icono: "assets/iconos/recycle_university.png",
-      tipoMaterial: ["Plástico", "Vidrio", "Papel"],
+      tipoMaterial: ["PET", "Vidrio", "Papel", "Aluminio"],
       direccion: "Ciudad de la Cultura Amado Nervo, UAN, Tepic, Nayarit",
       telefono: "311 211 0011",
       horario: "Lunes a Viernes: 9:00 - 15:00",
@@ -70,10 +68,5 @@ class CentrosReciclajeService {
       return centro.tipoMaterial.any((tipo) => 
         tipo.toLowerCase().contains(material.toLowerCase()));
     }).toList();
-  }
-
-  static List<CentroReciclaje> buscarPorNombre(String query) {
-    return centros.where((centro) => 
-      centro.nombre.toLowerCase().contains(query.toLowerCase())).toList();
   }
 }

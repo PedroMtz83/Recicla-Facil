@@ -358,6 +358,8 @@ exports.eliminarQueja = async (req, res) => {
         res.status(500).json({ mensaje: 'Error del servidor al querer eliminar la queja.' });
     }
 
+};
+
 // =========================================================================
 // CONTROLADORES DE CONTENIDO EDUCATIVO
 // =========================================================================
@@ -365,6 +367,7 @@ exports.eliminarQueja = async (req, res) => {
 // @desc    Crear nuevo contenido educativo
 // @route   POST /api/contenido-educativo
 // @access  Privado (Admin)
+
 exports.crearContenidoEducativo = async (req, res) => {
     try {
         const {
@@ -432,48 +435,18 @@ exports.crearContenidoEducativo = async (req, res) => {
 // @access  Público
 exports.obtenerContenidoEducativo = async (req, res) => {
     try {
-        const { 
-            categoria, 
-            tipo_material, 
-            publicado, 
-            etiqueta,
-            limit = 10,
-            page = 1 
-        } = req.query;
 
-        const filtro = {};
-        
-        // Aplicar filtros si se proporcionan
-        if (categoria) filtro.categoria = categoria;
-        if (tipo_material) filtro.tipo_material = tipo_material;
-        if (publicado !== undefined) filtro.publicado = publicado === 'true';
-        if (etiqueta) filtro.etiquetas = { $in: [etiqueta] };
-
-        const skip = (parseInt(page) - 1) * parseInt(limit);
-
-        const contenidos = await modelos.ContenidoEducativo.find(filtro)
-            .sort({ fecha_creacion: -1 })
-            .skip(skip)
-            .limit(parseInt(limit));
-
-        const total = await modelos.ContenidoEducativo.countDocuments(filtro);
+        const todosLosContenidos = await modelos.ContenidoEducativo.find();
 
         res.status(200).json({
-            contenidos,
-            paginacion: {
-                pagina_actual: parseInt(page),
-                total_paginas: Math.ceil(total / limit),
-                total_contenidos: total,
-                hasNext: (skip + contenidos.length) < total,
-                hasPrev: page > 1
-            }
+            contenidos: todosLosContenidos
         });
 
     } catch (error) {
-        console.error("Error en obtenerContenidoEducativo:", error);
-        res.status(500).json({ 
+        console.error("Error al obtener todos los contenidos:", error);
+        res.status(500).json({
             mensaje: 'Error interno al obtener el contenido educativo.',
-            error: error.message 
+            error: error.message
         });
     }
 };
@@ -668,5 +641,4 @@ exports.buscarContenidoEducativo = async (req, res) => {
             error: error.message 
         });
     }
-  }
 };

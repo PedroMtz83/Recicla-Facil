@@ -1,62 +1,60 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/contenido_educativo.dart';
 
 class ContenidoEduService {
-  static String _apiRoot = '';
-  static bool _ipInitialized = false;
-
-  // ===================================================================
+// ===================================================================
   // DETECTAR IP AUTOMÁTICAMENTE
   // ===================================================================
-  static Future<void> _initializeIP() async {
-    if (_ipInitialized) return;
-    
-    try {
-      final commonIPs = [
-        '192.168.1.101',    // Tu IP original
-        '192.168.1.100',    // Otra IP común
-        '10.0.2.2',         // Para Android emulator
-        'localhost',         // Para desarrollo local
-        '127.0.0.1',        // Localhost
-      ];
-      
-      for (String ip in commonIPs) {
-        try {
-          final testUrl = Uri.parse('http://$ip:3000/api/contenido-educativo');
-          final response = await http.get(testUrl).timeout(const Duration(seconds: 2));
-          
-          if (response.statusCode == 200) {
-            _apiRoot = 'http://$ip:3000/api';
-            debugPrint('✅ IP detectada automáticamente para ContenidoEduService: $ip');
-            break;
-          }
-        } catch (e) {
-          debugPrint('❌ IP $ip no disponible para ContenidoEduService: $e');
-        }
-      }
-      
-      if (_apiRoot.isEmpty) {
-        _apiRoot = 'http://192.168.1.101:3000/api';
-        debugPrint('🔄 Usando IP por defecto para ContenidoEduService: $_apiRoot');
-      }
-      
-    } catch (e) {
-      _apiRoot = 'http://192.168.1.101:3000/api';
-      debugPrint('❌ Error en detección automática, usando fallback: $_apiRoot');
+  static const String _direccionIpLocal = '192.168.1.101'; // <- CAMBIA ESTO POR TU IP
+
+  // 2. LÓGICA DE ASIGNACIÓN: Este getter elige la IP correcta según la plataforma.
+  static String get _apiRoot {
+    // ASIGNACIÓN PARA WEB:
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
     }
-    
-    _ipInitialized = true;
+
+    // ASIGNACIÓN PARA MÓVIL (Android):
+    try {
+      if (Platform.isAndroid) {
+        // En el emulador de Android, se "asigna" la IP especial del alias.
+        return 'http://10.0.2.2:3000/api';
+      }
+    } catch (e) {
+      // Fallback por si 'Platform' no está disponible.
+      return 'http://localhost:3000/api';
+    }
+
+    // ASIGNACIÓN PARA MÓVIL (iOS o dispositivo físico):
+    // Se "asigna" la IP de desarrollo configurada manualmente.
+    return 'http://$_direccionIpLocal:3000/api';
   }
 
-  // ===================================================================
-  // MÉTODO PARA OBTENER LA URL COMPLETA
-  // ===================================================================
-  static Future<String> _getFullUrl(String endpoint) async {
-    await _initializeIP();
-    return '$_apiRoot/contenido-educativo/$endpoint';
+  static String get serverBaseUrl {
+    // Para web, SIEMPRE usamos la IP local para acceder a recursos.
+    if (kIsWeb) {
+      return 'http://$_direccionIpLocal:3000';
+    }
+
+    // Para móvil, la lógica puede ser más compleja
+    try {
+      if (Platform.isAndroid) {
+        // En emulador, usamos la IP especial. En físico, la IP local.
+        // Una forma simple es asumir que si no es web, es la IP local.
+        // Pero para ser precisos con el emulador:
+        // return 'http://10.0.2.2:3000'; // Solo para emulador
+        return 'http://$_direccionIpLocal:3000'; // Para dispositivo físico
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    // Default para iOS y otros
+    return 'http://$_direccionIpLocal:3000';
   }
 
   // ===================================================================
@@ -79,7 +77,7 @@ class ContenidoEduService {
       'page': page.toString(),
     };
 
-    final uri = Uri.parse(await _getFullUrl('')).replace(queryParameters: queryParams);
+    final uri = Uri.parse('$_apiRoot/contenido-educativo/');
     debugPrint('ContenidoEduService - Obteniendo contenido en: $uri');
 
     try {
@@ -106,7 +104,7 @@ class ContenidoEduService {
   // 2. OBTENER CONTENIDO POR ID
   // ===================================================================
   Future<ContenidoEducativo> obtenerContenidoPorId(String id) async {
-    final url = Uri.parse(await _getFullUrl(id));
+    final url = Uri.parse('$_apiRoot/contenido-educativo/'+id);
     debugPrint('ContenidoEduService - Obteniendo contenido por ID en: $url');
 
     try {
@@ -146,7 +144,7 @@ class ContenidoEduService {
     required List<String> etiquetas,
     bool publicado = false,
   }) async {
-    final url = Uri.parse(await _getFullUrl(''));
+    final url = Uri.parse('$_apiRoot/contenido-educativo/');
     debugPrint('ContenidoEduService - Creando contenido en: $url');
 
     try {
@@ -196,7 +194,7 @@ class ContenidoEduService {
     List<String>? etiquetas,
     bool? publicado,
   }) async {
-    final url = Uri.parse(await _getFullUrl(id));
+    final url = Uri.parse('$_apiRoot/contenido-educativo/'+id);
     debugPrint('ContenidoEduService - Actualizando contenido en: $url');
 
     try {
@@ -234,7 +232,7 @@ class ContenidoEduService {
   // 5. ELIMINAR CONTENIDO EDUCATIVO
   // ===================================================================
   Future<Map<String, dynamic>> eliminarContenidoEducativo(String id) async {
-    final url = Uri.parse(await _getFullUrl(id));
+    final url = Uri.parse('$_apiRoot/contenido-educativo/'+id);
     debugPrint('ContenidoEduService - Eliminando contenido en: $url');
 
     try {
@@ -259,7 +257,7 @@ class ContenidoEduService {
   // ===================================================================
   Future<List<ContenidoEducativo>> obtenerContenidoPorCategoria(String categoria, {bool publicado = true}) async {
     final queryParams = {'publicado': publicado.toString()};
-    final uri = Uri.parse(await _getFullUrl('categoria/$categoria')).replace(queryParameters: queryParams);
+    final uri = Uri.parse('$_apiRoot/contenido-educativo/categoria/'+categoria);
     debugPrint('ContenidoEduService - Obteniendo contenido por categoría en: $uri');
 
     try {
@@ -286,7 +284,7 @@ class ContenidoEduService {
   // ===================================================================
   Future<List<ContenidoEducativo>> obtenerContenidoPorTipoMaterial(String tipoMaterial, {bool publicado = true}) async {
     final queryParams = {'publicado': publicado.toString()};
-    final uri = Uri.parse(await _getFullUrl('material/$tipoMaterial')).replace(queryParameters: queryParams);
+    final uri = Uri.parse('$_apiRoot/contenido-educativo/material/'+tipoMaterial);
     debugPrint('ContenidoEduService - Obteniendo contenido por tipo de material en: $uri');
 
     try {
@@ -313,7 +311,7 @@ class ContenidoEduService {
   // ===================================================================
   Future<List<ContenidoEducativo>> buscarContenidoEducativo(String termino, {bool publicado = true}) async {
     final queryParams = {'publicado': publicado.toString()};
-    final uri = Uri.parse(await _getFullUrl('buscar/$termino')).replace(queryParameters: queryParams);
+    final uri = Uri.parse('$_apiRoot/contenido-educativo/buscar/'+termino);
     debugPrint('ContenidoEduService - Buscando contenido en: $uri');
 
     try {

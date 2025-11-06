@@ -1,10 +1,7 @@
 const express = require('express');
-const router = express.Router();
-const controlador = require('../controllers/controlador');
+const router=express.Router();
+const controlador=require('../controllers/controlador');
 
-// =========================================================================
-// RUTAS DE USUARIOS
-// =========================================================================
 router.post('/usuarios', controlador.crearUsuario);
 router.get('/usuarios', controlador.obtenerUsuarios);
 router.get('/usuarios/:email', controlador.obtenerUsuarioPorEmail);
@@ -13,9 +10,6 @@ router.put('/usuarios/:email', controlador.actualizarUsuario);
 router.delete('/usuarios/:email', controlador.eliminarUsuario);
 router.post('/usuarios/cambiar-password', controlador.cambiarPassword);
 
-// =========================================================================
-// RUTAS DE QUEJAS
-// =========================================================================
 router.post('/quejas', controlador.crearQueja);
 router.get('/quejas/mis-quejas/:email', controlador.obtenerMisQuejas);
 router.get('/quejas/pendientes', controlador.obtenerQuejasPendientes);
@@ -44,4 +38,4 @@ router.get('/contenido-educativo/material/:tipo_material', controlador.obtenerCo
 // Ruta para buscar contenido educativo
 router.get('/contenido-educativo/buscar/:termino', controlador.buscarContenidoEducativo);
 
-module.exports = router;
+module.exports=router;
