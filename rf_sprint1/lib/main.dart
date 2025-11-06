@@ -5,6 +5,7 @@ import 'package:rf_sprint1/views/contenido_screen.dart';
 
 // Importa tus vistas y providers
 import 'package:rf_sprint1/views/perfilUsuario_screen.dart';
+import 'package:rf_sprint1/views/puntos_screen.dart';
 import 'package:rf_sprint1/views/quejas_tabs_screen.dart';
 import 'package:rf_sprint1/views/register_screen.dart';
 import 'package:rf_sprint1/views/login_screen.dart';
@@ -75,13 +76,15 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     ProfileScreen(),
     QuejasTabsScreen(),
-    ContenidoScreen()
+    ContenidoScreen(),
+    PuntosScreen(),
   ];
 
   final List<String> _pageTitles = [
     "Mi perfil",
     "Quejas y sugerencias",
-    'Contenido informativo'
+    'Contenido informativo',
+    'Puntos de reciclaje'
   ];
 
   void _onItemTapped(int index) {
@@ -134,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: Icon(Icons.subject),
-              title: Text('Quejas'),
+              title: Text('Quejas y sugerencias'),
               selected: _currentIndex == 1,
               selectedTileColor: Colors.green.withOpacity(0.1),
               onTap: () {
@@ -148,6 +151,15 @@ class _HomeScreenState extends State<HomeScreen> {
               selectedTileColor: Colors.green.withOpacity(0.1),
               onTap: () {
                 _onItemTapped(2);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.info),
+              title: Text('Puntos de reciclaje'),
+              selected: _currentIndex == 3,
+              selectedTileColor: Colors.green.withOpacity(0.1),
+              onTap: () {
+                _onItemTapped(3);
               },
             ),
           ],
