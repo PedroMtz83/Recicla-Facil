@@ -80,7 +80,7 @@ class UsuarioService {
         body: json.encode({
           'nombre': nombre,
           'email': email,
-          'password': password,
+          'password': password
         }),
       ).timeout(const Duration(seconds: 10));
 
@@ -98,22 +98,33 @@ class UsuarioService {
   // ===================================================================
   // 3. OBTENER todos los usuarios
   // ===================================================================
-  Future<List<dynamic>> obtenerUsuarios() async {
+  Future<List<Map<String, dynamic>>> obtenerUsuarios() async {
     final url = Uri.parse('$_apiRoot/usuarios');
     debugPrint('Haciendo GET a: $url');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url, headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      });
+
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        final List<dynamic> data = json.decode(response.body);
+        final List<Map<String, dynamic>> usuarios = [];
+        for (final item in data) {
+          if (item is Map) {
+            usuarios.add(Map<String, dynamic>.from(item));
+          }
+        }
+        return usuarios;
       } else {
         debugPrint('Error del servidor [GET]: ${response.statusCode}');
         debugPrint('Respuesta: ${response.body}');
-        return [];
+        throw Exception('Error al cargar usuarios: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Error de conexión [GET]: $e');
-      return [];
+      debugPrint('Error de conexión o parsing [GET]: $e');
+      throw Exception('No se pudo conectar al servidor.');
     }
   }
 
@@ -127,7 +138,6 @@ class UsuarioService {
     bool? admin,
   }) async {
     final url = Uri.parse('$_apiRoot/usuarios/$email');
-
     final Map<String, dynamic> body = {};
     if (nombre != null) body['nombre'] = nombre;
     if (password != null) body['password'] = password;

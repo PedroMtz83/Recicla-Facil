@@ -42,7 +42,7 @@ exports.crearUsuario = async (req, res) => {
 
 exports.obtenerUsuarios = async (req, res) => {
     try{
-        const usuarios = await modelos.Usuario.find();
+        const usuarios = await modelos.Usuario.find().lean();
         res.status(200).json(usuarios);
     }catch(error){
         res.status(500).json({ mensaje: 'Error al obtener los usuarios', error: error.message });
@@ -65,7 +65,9 @@ exports.obtenerUsuarioPorEmail = async (req, res) => {
         // 4. Si se encuentra, envía los datos (¡SIN LA CONTRASEÑA!)
         const usuarioParaCliente = {
             nombre: usuario.nombre,
-            email: usuario.email
+            email: usuario.email,
+            password: usuario.password,
+            admin: usuario.admin
         };
 
         res.status(200).json(usuarioParaCliente);
@@ -153,7 +155,7 @@ exports.actualizarUsuario = async (req, res) => {
 
     // Lógica para actualizar un usuario
     // Aceptar email por body o por parámetro de ruta (req.params.email)
-    const { nombre, password, admin } = req.body;
+    const { nombre, password, admin, correo } = req.body;
     const email = req.params && req.params.email ? req.params.email : req.body.email;
     try{
         if(!email){
