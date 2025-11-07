@@ -71,7 +71,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.white,
         actions: [
           IconButton(
             icon: Icon(_mostrarMapa ? Icons.list : Icons.map),

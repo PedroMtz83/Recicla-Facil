@@ -21,6 +21,7 @@ dependencies:
   latlong2: ^0.9.0  # Actualizado a la versión que requiere flutter_map 5.0.0
   # Geolocalización (funciona en Android y Web)
   geolocator: ^11.0.0
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

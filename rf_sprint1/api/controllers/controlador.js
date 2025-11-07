@@ -432,6 +432,25 @@ exports.crearContenidoEducativo = async (req, res) => {
     }
 };
 
+exports.crearContenido = async (req, res) => {
+    const baseUrl = `${req.protocol}://${req.get('host')}`; 
+    // Ejemplo de resultado: "http://192.168.1.100:3000"
+
+    const imagenesParaGuardar = req.files.map(file => {
+        return {
+            ruta: `${baseUrl}/uploads/${file.filename}`, 
+            pie_de_imagen: '...',
+            es_principal: false 
+        };
+    });
+
+    const nuevoContenido = new ContenidoEducativo({
+        imagenes: imagenesParaGuardar
+    });
+
+    await nuevoContenido.save();
+}
+
 // @desc    Obtener todo el contenido educativo (con filtros opcionales)
 // @route   GET /api/contenido-educativo
 // @access  Público

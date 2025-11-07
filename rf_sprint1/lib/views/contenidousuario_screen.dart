@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/contenido_educativo.dart';
 import '../services/contenido_edu_service.dart';
 import 'contenidodetalle_screen.dart';
+import 'detalle_contenido_screen.dart';
 
 enum TipoBusqueda { porTermino, porCategoria, porTipoMaterial }
 
@@ -108,7 +110,7 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
                           ),
                         );
                       },
-                      child: _buildContenidoCard(contenido),
+                      child: _buildContenidoCard(context, contenido),
                     );
                   },
                 );
@@ -207,140 +209,161 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
     );
   }
 
-  Widget _buildContenidoCard(ContenidoEducativo contenido) {
+  Widget _buildContenidoCard(BuildContext context, ContenidoEducativo contenido) {
+    // Lógica para determinar la URL completa de la imagen.
     final String? urlOPath = contenido.imagenPrincipal;
     String? imagenFinalUrl;
 
     if (urlOPath != null && urlOPath.isNotEmpty) {
+      // Si la ruta ya es una URL completa, la usa directamente.
       if (urlOPath.startsWith('http')) {
         imagenFinalUrl = urlOPath;
       } else {
+        // Si es una ruta relativa, le concatena la URL base del servidor.
+        // Asegúrate de que ContenidoEduService.serverBaseUrl esté definida.
         imagenFinalUrl = ContenidoEduService.serverBaseUrl + urlOPath;
       }
     }
     debugPrint("URL final para la tarjeta '${contenido.titulo}': $imagenFinalUrl");
 
-    return Card(
-      elevation: 4.0,
-      margin: EdgeInsets.only(bottom: 24.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (imagenFinalUrl != null)
-            Image.network(
-              imagenFinalUrl,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
+    // Se envuelve el Card en InkWell para hacerlo interactivo.
+    return InkWell(
+      onTap: () {
+        debugPrint("Tocado el contenido: ${contenido.titulo}");
+        // Navega a la pantalla de detalle al tocar la tarjeta.
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetalleContenidoScreen(contenido: contenido),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4.0,
+        margin: EdgeInsets.only(bottom: 24.0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+        clipBehavior: Clip.antiAlias, // Asegura que la imagen respete los bordes redondeados.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sección de la Imagen (usando CachedNetworkImage para optimización).
+            if (imagenFinalUrl != null)
+              CachedNetworkImage(
+                imageUrl: imagenFinalUrl,
+                height: 200,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                // Widget que se muestra mientras la imagen carga.
+                placeholder: (context, url) => Container(
                   height: 200,
                   color: Colors.grey[200],
-                  child:  Center(child: CircularProgressIndicator()),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint("FALLO AL CARGAR IMAGEN: $imagenFinalUrl - Error: $error");
-                return Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child:  Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
-                );
-              },
-            )
-          else
-            Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: Icon(Icons.photo, color: Colors.grey, size: 50),
-            ),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                // Widget que se muestra si la carga de la imagen falla.
+                errorWidget: (context, url, error) {
+                  debugPrint("FALLO AL CARGAR IMAGEN (Cached): $url - Error: $error");
+                  return Container(
+                    height: 200,
+                    color: Colors.grey[200],
+                    child: Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
+                  );
+                },
+              )
+            else
+            // Placeholder si no hay ninguna imagen disponible.
+              Container(
+                height: 200,
+                color: Colors.grey[200],
+                child: Icon(Icons.photo_library_outlined, color: Colors.grey, size: 50),
+              ),
 
-          Padding(
-            padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  contenido.titulo,
-                  style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 8.0),
-                Text(
-                  contenido.descripcion,
-                  style: TextStyle(fontSize: 15.0, color: Colors.grey[700], height: 1.4), // Mejor interlineado
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Wrap(
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children: [
-                Chip(
-                  label: Text(contenido.categoria),
-                  avatar: Icon(Icons.category_outlined, size: 18),
-                  backgroundColor: Colors.blue.shade50,
-                  labelStyle: TextStyle(color: Colors.blue.shade800),
-                  side: BorderSide(color: Colors.blue.shade100),
-                ),
-                Chip(
-                  label: Text(contenido.tipoMaterial),
-                  avatar: Icon(Icons.inventory_2_outlined, size: 18),
-                  backgroundColor: Colors.teal.shade50,
-                  labelStyle: TextStyle(color: Colors.teal.shade800),
-                  side: BorderSide(color: Colors.teal.shade100),
-                ),
-              ],
-            ),
-          ),
-
-          if (contenido.puntosClave.isNotEmpty)
+            // Sección de Título y Descripción.
             Padding(
-              padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+              padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(thickness: 1),
-                  SizedBox(height: 8.0),
                   Text(
-                    "Puntos Clave",
-                    style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                    contenido.titulo,
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 8.0),
-                  Column(
-                    children: contenido.puntosClave.map((punto) {
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 4.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
-                            SizedBox(width: 8.0),
-                            Expanded(
-                              child: Text(
-                                punto,
-                                style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+                  Text(
+                    contenido.descripcion,
+                    style: TextStyle(fontSize: 15.0, color: Colors.grey[700], height: 1.4),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-        ],
+
+            // Sección de Etiquetas (Chips).
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Wrap(
+                spacing: 8.0,
+                runSpacing: 4.0,
+                children: [
+                  Chip(
+                    label: Text(contenido.categoria),
+                    avatar: Icon(Icons.category_outlined, size: 18),
+                    backgroundColor: Colors.blue.shade50,
+                    labelStyle: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.w500),
+                    side: BorderSide(color: Colors.blue.shade100),
+                  ),
+                  Chip(
+                    label: Text(contenido.tipoMaterial),
+                    avatar: Icon(Icons.inventory_2_outlined, size: 18),
+                    backgroundColor: Colors.teal.shade50,
+                    labelStyle: TextStyle(color: Colors.teal.shade800, fontWeight: FontWeight.w500),
+                    side: BorderSide(color: Colors.teal.shade100),
+                  ),
+                ],
+              ),
+            ),
+
+            // Sección de Puntos Clave (solo si existen).
+            if (contenido.puntosClave.isNotEmpty)
+              Padding(
+                padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Divider(thickness: 1),
+                    SizedBox(height: 8.0),
+                    Text(
+                      "Puntos Clave",
+                      style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                    ),
+                    SizedBox(height: 8.0),
+                    Column(
+                      children: contenido.puntosClave.map((punto) {
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 4.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                              SizedBox(width: 8.0),
+                              Expanded(
+                                child: Text(
+                                  punto,
+                                  style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

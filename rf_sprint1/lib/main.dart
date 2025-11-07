@@ -154,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.info),
+              leading: Icon(Icons.pin_drop),
               title: Text('Puntos de reciclaje'),
               selected: _currentIndex == 3,
               selectedTileColor: Colors.green.withOpacity(0.1),
