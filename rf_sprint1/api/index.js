@@ -5,7 +5,7 @@ const app=express();
 const port=3000;
 const conectarDB=require('./config/db');
 const router=require('./routes/router');
-const host = '192.168.1.101'; // Especifica que el servidor debe escuchar en todas las interfaces de red
+const host = '0.0.0.0'; // Especifica que el servidor debe escuchar en todas las interfaces de red
 
 app.use(cors());
 app.use(express.json());
@@ -13,6 +13,7 @@ app.use(express.static(path.join(__dirname, 'assets')));
 app.get('/', (req, res) => {
   res.send('¡Servidor Node.js funcionando correctamente!');
 });
+
 conectarDB();
 app.use('/api', router);
 app.listen(port, host, () => {
