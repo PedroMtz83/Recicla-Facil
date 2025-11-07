@@ -12,7 +12,7 @@ class DetalleContenidoScreen extends StatelessWidget {
     if (ruta == null || ruta.isEmpty) return null;
     if (ruta.startsWith('http')) return ruta;
 
-    const String serverBaseUrl = "http://192.168.1.101:3000";
+    const String serverBaseUrl = "http://192.168.1.101:3000"; //Cambiar IP
     return serverBaseUrl + ruta;
   }
 

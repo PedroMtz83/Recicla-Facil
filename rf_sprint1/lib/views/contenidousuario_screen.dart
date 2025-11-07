@@ -219,10 +219,10 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
       if (urlOPath.startsWith('http')) {
         imagenFinalUrl = urlOPath;
       } else {
+        final pathLimpio = urlOPath.startsWith('/') ? urlOPath.substring(1) : urlOPath;
         // Si es una ruta relativa, le concatena la URL base del servidor.
         // Asegúrate de que ContenidoEduService.serverBaseUrl esté definida.
-        imagenFinalUrl = ContenidoEduService.serverBaseUrl + urlOPath;
-      }
+        imagenFinalUrl = "${ContenidoEduService.serverBaseUrl}/$pathLimpio";      }
     }
     debugPrint("URL final para la tarjeta '${contenido.titulo}': $imagenFinalUrl");
 

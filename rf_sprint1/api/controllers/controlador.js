@@ -386,21 +386,40 @@ exports.crearContenidoEducativo = async (req, res) => {
             publicado
         } = req.body;
 
-        // Validaciones básicas
+        // Validaciones básicas (esto está perfecto)
         if (!titulo || !descripcion || !contenido || !categoria || !tipo_material) {
             return res.status(400).json({ 
-                mensaje: 'Faltan campos obligatorios: título, descripción, contenido, categoría y tipo de material son requeridos.' 
+                mensaje: 'Faltan campos obligatorios.' 
             });
         }
 
-        // Validar que al menos haya una imagen principal
+        // --- INICIO DE LA MODIFICACIÓN PARA IMÁGENES ---
+
+        // 1. Construir la URL base del servidor
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+
+        // 2. Procesar el array de imágenes para construir la URL completa
+        let imagenesProcesadas = [];
         if (imagenes && imagenes.length > 0) {
-            const tieneImagenPrincipal = imagenes.some(img => img.es_principal === true);
+            imagenesProcesadas = imagenes.map(img => {
+                // Si la ruta que viene del frontend es relativa (ej: /images/...), la completamos
+                const esUrlCompleta = img.ruta.startsWith('http');
+                return {
+                    ruta: esUrlCompleta ? img.ruta : `${baseUrl}${img.ruta}`,
+                    pie_de_imagen: img.pie_de_imagen || '',
+                    es_principal: img.es_principal || false
+                };
+            });
+
+            // 3. Validar que al menos haya una imagen principal (tu lógica original, pero en el array procesado)
+            const tieneImagenPrincipal = imagenesProcesadas.some(img => img.es_principal === true);
             if (!tieneImagenPrincipal) {
                 // Si no hay imagen principal, marcar la primera como principal
-                imagenes[0].es_principal = true;
+                imagenesProcesadas[0].es_principal = true;
             }
         }
+        
+        // --- FIN DE LA MODIFICACIÓN ---
 
         const nuevoContenido = new modelos.ContenidoEducativo({
             titulo: titulo.trim(),
@@ -408,7 +427,7 @@ exports.crearContenidoEducativo = async (req, res) => {
             contenido: contenido,
             categoria,
             tipo_material,
-            imagenes: imagenes || [],
+            imagenes: imagenesProcesadas, // <-- Usamos el array procesado con URLs completas
             puntos_clave: puntos_clave || [],
             acciones_correctas: acciones_correctas || [],
             acciones_incorrectas: acciones_incorrectas || [],
@@ -471,6 +490,8 @@ exports.obtenerContenidoEducativo = async (req, res) => {
         });
     }
 };
+
+
 
 // @desc    Obtener contenido educativo por ID
 // @route   GET /api/contenido-educativo/:id
