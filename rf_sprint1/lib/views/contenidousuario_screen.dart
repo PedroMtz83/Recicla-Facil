@@ -197,10 +197,10 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
                 });
               },
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+
               ),
             ),
           ),

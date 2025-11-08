@@ -451,6 +451,7 @@ class _VistaPerfilState extends State<VistaPerfil> {
                 label: Text('Cambiar Contraseña'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 15),
+                    foregroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -883,7 +884,7 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
           final Widget titleWidget = Text(nombre, style: TextStyle(fontWeight: FontWeight.bold));
           final Widget subtitleWidget = Text(email);
           final Widget editButton = IconButton(
-            icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+            icon: Icon(Icons.edit, color: Colors.blue,),
             onPressed: () {
               _mostrarDialogoEditar(usuario);
             },
