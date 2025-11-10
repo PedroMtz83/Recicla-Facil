@@ -451,6 +451,7 @@ class _VistaPerfilState extends State<VistaPerfil> {
                 label: Text('Cambiar Contraseña'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 15),
+                    foregroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -540,6 +541,24 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
   }
 
   Future<void> _eliminarUsuario(String email) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.userEmail == email) {
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Acción no permitida'),
+          content: const Text('No puedes eliminar tu propia cuenta de usuario desde esta pantalla.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -568,7 +587,6 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
   void _mostrarDialogoEditar(Map<String, dynamic> usuario) {
     final nombreController = TextEditingController(text: usuario['nombre']?.toString() ?? '');
     final passwordController = TextEditingController(text: usuario['password']?.toString() ?? '');
-
     Object? adminValue = usuario['admin'];
     bool esAdminInicial = false;
     if (adminValue is bool) {
@@ -578,69 +596,181 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
     } else if (adminValue is String) {
       esAdminInicial = (adminValue.toLowerCase() == 'true');
     }
+
+    // Variable de estado para el Switch
     bool esAdminActual = esAdminInicial;
+    bool _passwordVisible = false; // <-- CAMBIO: Variable para el estado de visibilidad de la contraseña.
     showDialog(
       context: context,
+      // Usamos barrierDismissible: false para obligar al usuario a usar los botones
+      barrierDismissible: false,
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-
+            // --- DIÁLOGO VISUALMENTE MEJORADO ---
             return AlertDialog(
-              title: Text('Editar Usuario'),
+              // Eliminamos el padding por defecto para controlar el diseño
+              contentPadding: EdgeInsets.zero,
+              // Bordes redondeados para el diálogo
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              // Clip para que el contenido respete los bordes redondeados
+              clipBehavior: Clip.antiAlias,
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: nombreController,
-                      decoration: InputDecoration(labelText: 'Nombre'),
+                    // --- ENCABEZADO DEL DIÁLOGO ---
+                    Container(
+                      width: double.infinity,
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_note, color: Theme.of(context).primaryColor),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Editar Usuario',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    SizedBox(height: 8),
-                    TextField(
-                      controller: passwordController,
-                      decoration: InputDecoration(labelText: 'Contraseña'),
+
+                    // --- FORMULARIO ---
+                    Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // --- TEXTFIELD DE NOMBRE MEJORADO ---
+                          TextFormField(
+                            controller: nombreController,
+                            decoration: InputDecoration(
+                              labelText: 'Nombre de usuario',
+                              prefixIcon: Icon(Icons.person_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // --- TEXTFIELD DE CONTRASEÑA MEJORADO ---
+                          TextFormField(
+                            controller: passwordController,
+                            obscureText: !_passwordVisible, // Oculta el texto de la contraseña
+                            decoration: InputDecoration(
+                              labelText: 'Nueva Contraseña (opcional)',
+                              hintText: 'Dejar en blanco para no cambiar',
+                              prefixIcon: Icon(Icons.lock_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _passwordVisible ? Icons.visibility : Icons.visibility_off,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setDialogState(() {
+                                    _passwordVisible = !_passwordVisible;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // --- SWITCH DENTRO DE UN CARD ---
+                          Card(
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                              side: BorderSide(color: Colors.grey.shade300, width: 1),
+                            ),
+                            child: SwitchListTile(
+                              title: Text(esAdminActual ? 'Rol de Administrador' : 'Rol de Usuario'),
+                              subtitle: Text(
+                                esAdminActual ? 'El usuario tendrá permisos elevados' : 'El usuario tendrá permisos estándar',
+                                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                              ),
+                              value: esAdminActual,
+                              onChanged: (newValue) {
+                                setDialogState(() {
+                                  esAdminActual = newValue;
+                                });
+                              },
+                              // Iconos para indicar el estado
+                              secondary: Icon(
+                                esAdminActual ? Icons.shield_outlined : Icons.person_outline,
+                                color: esAdminActual ? Colors.blueAccent : Colors.grey,
+                              ),
+                              activeColor: Colors.blueAccent,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    SizedBox(height: 8),
-                    SwitchListTile(
-                      title: Text('Administrador'),
-                      value: esAdminActual,
-                      onChanged: (newValue) {
-                        setDialogState(() {
-                          esAdminActual = newValue;
-                        });
-                      },
+
+                    // --- BOTONES DE ACCIÓN ---
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            child: const Text('CANCELAR'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.save_alt_outlined, size: 18),
+                            label: const Text('GUARDAR'),
+                            onPressed: () async {
+                              final String? password = passwordController.text.isNotEmpty ? passwordController.text : null;
+
+                              // Lógica de actualización (incluyendo password opcional)
+                              final exito = await _usuarioService.actualizarUsuario(
+                                email: usuario['email'] ?? '',
+                                nombre: nombreController.text,
+                                password: password, // Pasa la nueva contraseña si se escribió
+                                admin: esAdminActual,
+                              );
+
+                              if (!mounted) return;
+                              Navigator.of(dialogContext).pop();
+
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(exito ? 'Usuario actualizado con éxito' : 'Error al actualizar el usuario'),
+                                backgroundColor: exito ? Colors.green : Colors.red,
+                                behavior: SnackBarBehavior.floating,
+                              ));
+
+                              if (exito) {
+                                _cargarTodosLosUsuarios(); // Refresca la lista
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    final exito = await _usuarioService.actualizarUsuario(
-                      email: usuario['email'] ?? '',
-                      nombre: nombreController.text,
-                      admin: esAdminActual,
-                    );
-
-                    Navigator.of(dialogContext).pop();
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(exito ? 'Usuario actualizado' : 'Error al actualizar'),
-                        backgroundColor: exito ? Colors.green : Colors.red,
-                      ));
-                      if (exito) {
-                        _cargarTodosLosUsuarios(); // Refresca la lista
-                      }
-                    }
-                  },
-                  child: Text('Guardar'),
-                ),
-              ],
             );
           },
         );
@@ -754,7 +884,7 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
           final Widget titleWidget = Text(nombre, style: TextStyle(fontWeight: FontWeight.bold));
           final Widget subtitleWidget = Text(email);
           final Widget editButton = IconButton(
-            icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+            icon: Icon(Icons.edit, color: Colors.blue,),
             onPressed: () {
               _mostrarDialogoEditar(usuario);
             },

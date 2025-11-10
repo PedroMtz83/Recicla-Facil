@@ -303,37 +303,33 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
               ],
             ),
           ),
-          if (contenido.puntosClave.isNotEmpty && contenido.puntosClave.length > 0)
+
+          if (contenido.puntosClave.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
+              padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(thickness: 1),
-                  const SizedBox(height: 8.0),
+                  Divider(thickness: 1),
+                  SizedBox(height: 8.0),
                   Text(
                     "Puntos Clave",
-                    style: TextStyle(
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800]),
+                    style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                   ),
-                  const SizedBox(height: 8.0),
+                  SizedBox(height: 8.0),
                   Column(
                     children: contenido.puntosClave.map((punto) {
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 4.0),
+                        padding: EdgeInsets.only(bottom: 4.0),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.check_circle_outline,
-                                color: Colors.green, size: 20),
-                            const SizedBox(width: 8.0),
+                            Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                            SizedBox(width: 8.0),
                             Expanded(
                               child: Text(
                                 punto,
-                                style:
-                                TextStyle(fontSize: 14.0, color: Colors.grey[600]),
+                                style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
                               ),
                             ),
                           ],

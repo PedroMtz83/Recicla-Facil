@@ -274,7 +274,9 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                   icon: Icon(Icons.add_photo_alternate_outlined),
                   label: Text('Seleccionar Imágenes'),
                   style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.green,
+                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                   ),
                 ),
               ),
@@ -300,9 +302,8 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                   label: Text(_estaCargando ? 'Guardando...' : 'Guardar Contenido'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    disabledBackgroundColor: Colors.green.shade200,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                   ),
                 ),
               ),
