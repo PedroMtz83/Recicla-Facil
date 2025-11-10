@@ -1,4 +1,6 @@
 const modelos = require('../models/modelos');
+const fs = require('fs');
+const path = require('path');
 
 exports.crearUsuario = async (req, res) => {
      try {
@@ -378,12 +380,12 @@ exports.crearContenidoEducativo = async (req, res) => {
             contenido,
             categoria,
             tipo_material,
-            imagenes,
             puntos_clave,
             acciones_correctas,
             acciones_incorrectas,
             etiquetas,
-            publicado
+            publicado,
+            img_principal
         } = req.body;
 
         // Validaciones básicas
@@ -393,12 +395,52 @@ exports.crearContenidoEducativo = async (req, res) => {
             });
         }
 
-        // Validar que al menos haya una imagen principal
-        if (imagenes && imagenes.length > 0) {
-            const tieneImagenPrincipal = imagenes.some(img => img.es_principal === true);
-            if (!tieneImagenPrincipal) {
-                // Si no hay imagen principal, marcar la primera como principal
-                imagenes[0].es_principal = true;
+        // Procesar imágenes desde req.files
+        const imagenesProcesadas = [];
+        let i=0;
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                // Generar URL para la imagen subida
+                const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+                
+                imagenesProcesadas.push({
+                    ruta: imageUrl,
+                    pie_de_imagen: `Imagen de ${titulo}`,
+                    es_principal: img_principal == i
+                });
+                i++;
+            }
+            console.log(img_principal);
+        } else {
+            return res.status(400).json({ 
+                mensaje: 'Se requiere al menos una imagen.' 
+            });
+        }
+
+        // Procesar arrays que pueden venir como strings o arrays
+        let puntosClaveArray = [];
+        if (puntos_clave) {
+            try {
+                if (typeof puntos_clave === 'string') {
+                    puntosClaveArray = puntos_clave.split(',').map(item => item.trim()).filter(item => item !== '');
+                } else if (Array.isArray(puntos_clave)) {
+                    puntosClaveArray = puntos_clave.filter(item => item && typeof item === 'string' && item.trim() !== '');
+                }
+            } catch (e) {
+                console.warn('crearContenidoEducativo: error procesando puntos_clave:', e.message);
+            }
+        }
+
+        let etiquetasArray = [];
+        if (etiquetas) {
+            try {
+                if (typeof etiquetas === 'string') {
+                    etiquetasArray = etiquetas.split(',').map(item => item.trim()).filter(item => item !== '');
+                } else if (Array.isArray(etiquetas)) {
+                    etiquetasArray = etiquetas.filter(item => item && typeof item === 'string' && item.trim() !== '');
+                }
+            } catch (e) {
+                console.warn('crearContenidoEducativo: error procesando etiquetas:', e.message);
             }
         }
 
@@ -408,11 +450,11 @@ exports.crearContenidoEducativo = async (req, res) => {
             contenido: contenido,
             categoria,
             tipo_material,
-            imagenes: imagenes || [],
-            puntos_clave: puntos_clave || [],
+            imagenes: imagenesProcesadas,
+            puntos_clave: JSON.parse(puntos_clave) || [],
             acciones_correctas: acciones_correctas || [],
             acciones_incorrectas: acciones_incorrectas || [],
-            etiquetas: etiquetas || [],
+            etiquetas: JSON.parse(etiquetas) || [],
             publicado: publicado || false
         });
 
@@ -439,6 +481,8 @@ exports.obtenerContenidoEducativo = async (req, res) => {
     try {
 
         const todosLosContenidos = await modelos.ContenidoEducativo.find();
+
+        
 
         res.status(200).json({
             contenidos: todosLosContenidos
@@ -482,38 +526,181 @@ exports.obtenerContenidoPorId = async (req, res) => {
 exports.actualizarContenidoEducativo = async (req, res) => {
     try {
         const contenidoId = req.params.id;
-        const {
-            titulo,
-            descripcion,
-            contenido,
-            categoria,
-            tipo_material,
-            imagenes,
-            puntos_clave,
-            acciones_correctas,
-            acciones_incorrectas,
-            etiquetas,
-            publicado
-        } = req.body;
+        // Defensive: parse body fields for multipart
+        let body = req.body || {};
+        let titulo = body.titulo;
+        let descripcion = body.descripcion;
+        let contenido = body.contenido;
+        let categoria = body.categoria;
+        let tipo_material = body.tipo_material;
+        let imagenes = body.imagenes;
+        let puntos_clave = body.puntos_clave;
+        let acciones_correctas = body.acciones_correctas;
+        let acciones_incorrectas = body.acciones_incorrectas;
+        let etiquetas = body.etiquetas;
+        let publicado = body.publicado;
+
+        // Log para depuración
+        console.log('actualizarContenidoEducativo - content-type:', req.headers['content-type']);
+        console.log('actualizarContenidoEducativo - body keys:', Object.keys(body));
+        console.log('actualizarContenidoEducativo - files count:', req.files ? req.files.length : 0);
 
         const contenidoExistente = await modelos.ContenidoEducativo.findById(contenidoId);
         if (!contenidoExistente) {
             return res.status(404).json({ mensaje: 'Contenido educativo no encontrado.' });
         }
 
-        // Construir objeto de actualización
+        // Construir objeto de actualización para campos simples
         const update = {};
-        if (titulo !== undefined) update.titulo = titulo.trim();
-        if (descripcion !== undefined) update.descripcion = descripcion.trim();
+        if (titulo !== undefined) update.titulo = String(titulo).trim();
+        if (descripcion !== undefined) update.descripcion = String(descripcion).trim();
         if (contenido !== undefined) update.contenido = contenido;
         if (categoria !== undefined) update.categoria = categoria;
         if (tipo_material !== undefined) update.tipo_material = tipo_material;
-        if (imagenes !== undefined) update.imagenes = imagenes;
-        if (puntos_clave !== undefined) update.puntos_clave = puntos_clave;
+        
+        // Procesar puntos clave como array (pueden venir como string separado por comas o array)
+        if (puntos_clave !== undefined) {
+            try {
+                if (typeof puntos_clave === 'string') {
+                    update.puntos_clave = puntos_clave.split(',').map(item => item.trim()).filter(item => item !== '');
+                } else if (Array.isArray(puntos_clave)) {
+                    update.puntos_clave = puntos_clave;
+                }
+            } catch (e) {
+                console.warn('actualizarContenidoEducativo: error procesando puntos_clave:', e.message);
+            }
+        }
+        update.puntos_clave = JSON.parse(body.puntos_clave || '[]');
+        
         if (acciones_correctas !== undefined) update.acciones_correctas = acciones_correctas;
         if (acciones_incorrectas !== undefined) update.acciones_incorrectas = acciones_incorrectas;
-        if (etiquetas !== undefined) update.etiquetas = etiquetas;
+        if (etiquetas !== undefined) {
+            try {
+                if (typeof etiquetas === 'string') {
+                    update.etiquetas = etiquetas.split(',').map(item => item.trim()).filter(item => item !== '');
+                } else if (Array.isArray(etiquetas)) {
+                    update.etiquetas = etiquetas;
+                }
+            } catch (e) {
+                console.warn('actualizarContenidoEducativo: error procesando etiquetas:', e.message);
+            }
+        }
         if (publicado !== undefined) update.publicado = publicado;
+        update.etiquetas = JSON.parse(body.etiquetas || '[]');
+
+        // ========== Manejo de imágenes ==========
+        // uploadsDir debe coincidir con multer config
+        const uploadsDir = path.join(__dirname, '..', 'uploads');
+
+        // Partimos de las imágenes existentes
+        let imagenesFinal = Array.isArray(contenidoExistente.imagenes) ? [...contenidoExistente.imagenes] : [];
+
+        // Si se suben archivos nuevos y NO se envía explícitamente el campo 'imagenes' para mantener
+        // entonces asumimos que queremos REEMPLAZAR las imágenes existentes: borrarlas del disco y partir de cero.
+        if (req.files && req.files.length > 0 && imagenes === undefined) {
+            // eliminar archivos físicos existentes
+            if (Array.isArray(contenidoExistente.imagenes)) {
+                for (const img of contenidoExistente.imagenes) {
+                    try {
+                        const ruta = img && img.ruta ? img.ruta : null;
+                        if (!ruta) continue;
+                        let filename = ruta;
+                        try {
+                            if (typeof ruta === 'string' && ruta.startsWith('http')) {
+                                const url = new URL(ruta);
+                                filename = path.basename(url.pathname);
+                            } else {
+                                filename = path.basename(ruta);
+                            }
+                        } catch (_) {
+                            filename = path.basename(ruta);
+                        }
+                        const filePath = path.join(uploadsDir, filename);
+                        if (fs.existsSync(filePath)) {
+                            await fs.promises.unlink(filePath);
+                        }
+                    } catch (err) {
+                        console.warn('No se pudo eliminar archivo antiguo al reemplazar imágenes:', err.message);
+                    }
+                }
+            }
+            imagenesFinal = [];
+        }
+
+        // Si el cliente envía un campo 'imagenes' (JSON) con la lista que desea mantener, parsearlo
+        if (imagenes !== undefined) {
+            try {
+                let parsed = imagenes;
+                if (typeof imagenes === 'string') parsed = JSON.parse(imagenes);
+                if (Array.isArray(parsed)) {
+                    imagenesFinal = parsed;
+                }
+            } catch (e) {
+                console.warn('actualizarContenidoEducativo: no se pudo parsear campo imagenes:', e.message);
+            }
+        }
+
+        // Agregar archivos nuevos enviados en multipart (req.files)
+        if (req.files && req.files.length > 0) {
+            let i=0;
+            for (const file of req.files) {
+                const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+                imagenesFinal.push({
+                    ruta: imageUrl,
+                    pie_de_imagen: `Imagen de ${titulo || contenidoExistente.titulo}`,
+                    es_principal: i==0
+                });
+                i++;
+            }
+        }
+
+        // Procesar lista 'borrar_imagenes' si viene (JSON array de rutas o nombres)
+        if (req.body && req.body.borrar_imagenes) {
+            try {
+                let borrar = body.borrar_imagenes;
+                if (typeof borrar === 'string') borrar = JSON.parse(borrar);
+                if (Array.isArray(borrar)) {
+                    for (const entry of borrar) {
+                        try {
+                            // entry puede ser URL completa o nombre de archivo
+                            let filename = entry;
+                            try {
+                                if (typeof entry === 'string' && entry.startsWith('http')) {
+                                    const url = new URL(entry);
+                                    filename = path.basename(url.pathname);
+                                } else {
+                                    filename = path.basename(String(entry));
+                                }
+                            } catch (e) {
+                                filename = path.basename(String(entry));
+                            }
+
+                            const filePath = path.join(uploadsDir, filename);
+                            if (fs.existsSync(filePath)) {
+                                await fs.promises.unlink(filePath);
+                            }
+
+                            // Quitar referencias de imagenesFinal que apunten a ese archivo
+                            imagenesFinal = imagenesFinal.filter(img => {
+                                try {
+                                    const ruta = img && img.ruta ? String(img.ruta) : '';
+                                    return !ruta.endsWith(filename);
+                                } catch (_) { return true; }
+                            });
+                        } catch (err) {
+                            console.error('Error eliminando archivo en actualizarContenidoEducativo:', err);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('actualizarContenidoEducativo: no se pudo parsear borrar_imagenes:', e.message);
+            }
+        }
+
+        // Si hubo cambios en imágenes, asignarlas al update
+        if (imagenes !== undefined || (req.files && req.files.length > 0) || (body && body.borrar_imagenes)) {
+            update.imagenes = imagenesFinal;
+        }
 
         const contenidoActualizado = await modelos.ContenidoEducativo.findByIdAndUpdate(
             contenidoId,
@@ -541,14 +728,60 @@ exports.actualizarContenidoEducativo = async (req, res) => {
 exports.eliminarContenidoEducativo = async (req, res) => {
     try {
         const contenidoId = req.params.id;
-        const contenidoEliminado = await modelos.ContenidoEducativo.findByIdAndDelete(contenidoId);
 
-        if (!contenidoEliminado) {
+        // Primero buscamos el documento para obtener las rutas de las imágenes
+        const contenido = await modelos.ContenidoEducativo.findById(contenidoId);
+        if (!contenido) {
             return res.status(404).json({ mensaje: 'Contenido educativo no encontrado.' });
         }
 
+        // Directorio donde multer guarda las imágenes (coincide con config/multer.config.js)
+        const uploadsDir = path.join(__dirname, '..', 'uploads');
+
+        const archivosEliminados = [];
+        // Intentar eliminar cada archivo referenciado en contenido.imagenes
+        if (Array.isArray(contenido.imagenes)) {
+            for (const img of contenido.imagenes) {
+                try {
+                    const ruta = img && img.ruta ? img.ruta : null;
+                    if (!ruta) continue;
+
+                    // La ruta almacenada es una URL pública (ej. http://host/uploads/archivo.jpg)
+                    // Extraemos el nombre de archivo
+                    let filename = ruta;
+                    try {
+                        if (typeof ruta === 'string' && ruta.startsWith('http')) {
+                            const url = new URL(ruta);
+                            filename = path.basename(url.pathname);
+                        } else {
+                            filename = path.basename(ruta);
+                        }
+                    } catch (e) {
+                        // Si falló el parseo como URL, usar basename directamente
+                        filename = path.basename(ruta);
+                    }
+
+                    const filePath = path.join(uploadsDir, filename);
+                    if (fs.existsSync(filePath)) {
+                        await fs.promises.unlink(filePath);
+                        archivosEliminados.push(filename);
+                    } else {
+                        // Archivo no existe; loggear para debug pero continuar
+                        console.warn(`Archivo no encontrado al intentar eliminar: ${filePath}`);
+                    }
+                } catch (err) {
+                    console.error('Error eliminando imagen vinculada al contenido:', err);
+                    // continuar con las demás imágenes
+                }
+            }
+        }
+
+        // Finalmente eliminar el documento de la base de datos
+        await modelos.ContenidoEducativo.findByIdAndDelete(contenidoId);
+
         res.status(200).json({ 
-            mensaje: 'Contenido educativo eliminado exitosamente.' 
+            mensaje: 'Contenido educativo eliminado exitosamente.',
+            archivosEliminados
         });
 
     } catch (error) {

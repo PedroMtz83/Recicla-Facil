@@ -138,7 +138,7 @@ class _ContenidoDetalleScreenState extends State<ContenidoDetalleScreen> {
 
           SizedBox(height: 24),
 
-          if (contenido.puntosClave.isNotEmpty)
+          if (contenido.puntosClave.isNotEmpty && contenido.puntosClave.length > 0)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(

@@ -23,6 +23,24 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
   final _etiquetasController = TextEditingController();
   final List<File> _imagenesSeleccionadas = [];
   final ImagePicker _picker = ImagePicker();
+  final List<String> _categoria = [
+    'tipos-materiales',
+    'proceso-reciclaje',
+    'consejos-practicos',
+    'preparacion-materiales'
+  ];
+  final List<String> _materiales = [
+    'plastico',
+    'vidrio',
+    'papel',
+    'metal',
+    'organico',
+    'electronico',
+    'general'
+  ];
+  String catSelect='tipos-materiales';
+  String materialSelect='plastico';
+
 
   bool _estaCargando = false;
   int? _imagenPrincipalIndex;
@@ -79,17 +97,6 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
 
     setState(() => _estaCargando = true);
     try {
-      List<Map<String, dynamic>> listaImagenesParaApi = [];
-      for (int i = 0; i < _imagenesSeleccionadas.length; i++) {
-        final imagenFile = _imagenesSeleccionadas[i];
-        final imageUrl = await _subirImagen(imagenFile);
-        listaImagenesParaApi.add({
-          'ruta': imageUrl,
-          'pie_de_imagen': 'Imagen de ${ _tituloController.text}',
-          'es_principal': i == _imagenPrincipalIndex,
-        });
-      }
-
       final puntosClave = _puntosClaveController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
       final etiquetas = _etiquetasController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
 
@@ -97,14 +104,15 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
         titulo: _tituloController.text,
         descripcion: _descripcionController.text,
         contenido: _contenidoController.text,
-        categoria: _categoriaController.text,
-        tipoMaterial: _tipoMaterialController.text,
-        imagenes: listaImagenesParaApi,
+        categoria: catSelect,
+        tipoMaterial: materialSelect,
+        imagenes: _imagenesSeleccionadas,
         puntosClave: puntosClave,
         accionesCorrectas: [],
         accionesIncorrectas: [],
         etiquetas: etiquetas,
         publicado: true,
+        imgPrincipal: _imagenPrincipalIndex!,
       );
 
       if (mounted && response['statusCode'] == 201) {
@@ -196,18 +204,59 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextFormField(
-                      _categoriaController,
-                      'Categoría',
-                      validationMsg: 'La categoría es obligatoria',
+                    child: Container(
+                      width: double.infinity,
+                      child: DropdownButtonFormField<String>(
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Categoría',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        value: catSelect,
+                        items: _categoria.map((String valor) {
+                          return DropdownMenuItem<String>(
+                            value: valor,
+                            child: Text(
+                              valor.replaceAll('-', ' ').toUpperCase(),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (String? nuevoValor) {
+                          setState(() {
+                            catSelect = nuevoValor!;
+                          });
+                        },
+                      ),
                     ),
                   ),
                   SizedBox(width: 10),
                   Expanded(
-                    child: _buildTextFormField(
-                      _tipoMaterialController,
-                      'Tipo de Material',
-                      validationMsg: 'El tipo es obligatorio',
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true, // ajusta el dropdown al ancho disponible
+                      decoration: InputDecoration(
+                        labelText: 'Selecciona el tipo de material',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      value: materialSelect,
+                      items: _materiales.map((String valor) {
+                        return DropdownMenuItem<String>(
+                          value: valor,
+                          child: Text(
+                            valor.toUpperCase(),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? nuevoValor) {
+                        setState(() {
+                          materialSelect = nuevoValor!;
+                        });
+                      },
                     ),
                   ),
                 ],

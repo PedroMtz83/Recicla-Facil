@@ -137,48 +137,89 @@ class ContenidoEduService {
     required String contenido,
     required String categoria,
     required String tipoMaterial,
-    required List<Map<String, dynamic>> imagenes,
+    required List<File> imagenes,
     required List<String> puntosClave,
     required List<String> accionesCorrectas,
     required List<String> accionesIncorrectas,
     required List<String> etiquetas,
     bool publicado = false,
+    required int imgPrincipal,
   }) async {
     final url = Uri.parse('$_apiRoot/contenido-educativo/');
-    debugPrint('ContenidoEduService - Creando contenido en: $url');
+    debugPrint('ContenidoEduService - Subiendo contenido a: $url');
+
+    // Crear solicitud multipart
+    final request = http.MultipartRequest('POST', url);
+
+    // ===== CAMPOS DE TEXTO =====
+    request.fields['titulo'] = titulo;
+    request.fields['descripcion'] = descripcion;
+    request.fields['contenido'] = contenido;
+    request.fields['categoria'] = categoria;
+    request.fields['tipo_material'] = tipoMaterial;
+    request.fields['publicado'] = publicado.toString();
+
+    // Listas codificadas como JSON string
+    request.fields['puntos_clave'] = jsonEncode(puntosClave);
+    request.fields['acciones_correctas'] = jsonEncode(accionesCorrectas);
+    request.fields['acciones_incorrectas'] = jsonEncode(accionesIncorrectas);
+    request.fields['etiquetas'] = jsonEncode(etiquetas);
+    request.fields['img_principal'] = imgPrincipal.toString();
+
+
+
+    // ===== ARCHIVOS =====
+    for (var i = 0; i < imagenes.length; i++) {
+      final file = imagenes[i];
+      final multipartFile = await http.MultipartFile.fromPath(
+        'imagenes',   // 👈 este es el nombre del campo que el backend debe reconocer
+        file.path,
+      );
+      request.files.add(multipartFile);
+    }
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: json.encode({
-          'titulo': titulo,
-          'descripcion': descripcion,
-          'contenido': contenido,
-          'categoria': categoria,
-          'tipo_material': tipoMaterial,
-          'imagenes': imagenes,
-          'puntos_clave': puntosClave,
-          'acciones_correctas': accionesCorrectas,
-          'acciones_incorrectas': accionesIncorrectas,
-          'etiquetas': etiquetas,
-          'publicado': publicado,
-        }),
-      ).timeout(const Duration(seconds: 15));
+      // Enviar la solicitud con timeout
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 20));
+      final response = await http.Response.fromStream(streamedResponse);
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      responseData['statusCode'] = response.statusCode;
-      return responseData;
+      // Loguear status y body para facilitar debugging
+      debugPrint('ContenidoEduService - upload status: ${response.statusCode}');
+      debugPrint('ContenidoEduService - upload body: ${response.body}');
 
+      // Intentar parsear JSON solo si el servidor devolvió un 2xx
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        try {
+          final Map<String, dynamic> data = json.decode(response.body);
+          data['statusCode'] = response.statusCode;
+          return data;
+        } catch (e) {
+          // Respuesta 2xx pero no es JSON
+          return {
+            'statusCode': response.statusCode,
+            'body': response.body,
+          };
+        }
+      }
+
+      // En caso de error (4xx/5xx) intentar extraer mensaje JSON, si no, devolver body crudo
+      try {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        errorData['statusCode'] = response.statusCode;
+        throw Exception('Error al subir contenido: ${response.statusCode} - ${errorData}');
+      } catch (_) {
+        throw Exception('Error al subir contenido: ${response.statusCode} - ${response.body}');
+      }
     } on TimeoutException {
       throw Exception('Tiempo de espera agotado. Revisa tu conexión.');
     } catch (e) {
-      throw Exception('Error de conexión: $e');
+      // Añadir más contexto al error para facilitar debugging en la app
+      throw Exception('Error al subir contenido: ${e.toString()}');
     }
   }
 
   // ===================================================================
-  // 4. ACTUALIZAR CONTENIDO EDUCATIVO
+  // 4. ACTUALIZAR CONTENIDO EDUCATIVO (CON LÓGICA MULTIPART)
   // ===================================================================
   Future<Map<String, dynamic>> actualizarContenidoEducativo({
     required String id,
@@ -187,46 +228,83 @@ class ContenidoEduService {
     String? contenido,
     String? categoria,
     String? tipoMaterial,
-    List<Map<String, dynamic>>? imagenes,
     List<String>? puntosClave,
     List<String>? accionesCorrectas,
     List<String>? accionesIncorrectas,
     List<String>? etiquetas,
     bool? publicado,
+    int? imgPrincipal,
+    required List<File> nuevasImagenes, // Nuevas imágenes para subir
+    List<String>? idsImagenesAEliminar, // IDs de imágenes existentes a eliminar
   }) async {
-    final url = Uri.parse('$_apiRoot/contenido-educativo/'+id);
-    debugPrint('ContenidoEduService - Actualizando contenido en: $url');
+    final url = Uri.parse('$_apiRoot/contenido-educativo/$id');
+    debugPrint('ContenidoEduService - Actualizando contenido (multipart) en: $url');
+
+    // Crear solicitud multipart, usando PUT para actualización
+    final request = http.MultipartRequest('PUT', url);
+
+    // ===== CAMPOS DE TEXTO (SOLO SI NO SON NULOS) =====
+    if (titulo != null) request.fields['titulo'] = titulo;
+    if (descripcion != null) request.fields['descripcion'] = descripcion;
+    if (contenido != null) request.fields['contenido'] = contenido;
+    if (categoria != null) request.fields['categoria'] = categoria;
+    if (tipoMaterial != null) request.fields['tipo_material'] = tipoMaterial;
+    if (publicado != null) request.fields['publicado'] = publicado.toString();
+    if (imgPrincipal != null) request.fields['img_principal'] = imgPrincipal.toString();
+
+    // ===== LISTAS (CODIFICADAS COMO JSON) =====
+    if (puntosClave != null) request.fields['puntos_clave'] = jsonEncode(puntosClave);
+    if (accionesCorrectas != null) request.fields['acciones_correctas'] = jsonEncode(accionesCorrectas);
+    if (accionesIncorrectas != null) request.fields['acciones_incorrectas'] = jsonEncode(accionesIncorrectas);
+    if (etiquetas != null) request.fields['etiquetas'] = jsonEncode(etiquetas);
+    if (idsImagenesAEliminar != null) request.fields['ids_imagenes_a_eliminar'] = jsonEncode(idsImagenesAEliminar);
+
+    // ===== NUEVOS ARCHIVOS DE IMAGEN =====
+    if (nuevasImagenes != null) {
+      for (var file in nuevasImagenes) {
+        final multipartFile = await http.MultipartFile.fromPath(
+          'imagenes', // Nombre del campo que el backend espera
+          file.path,
+        );
+        request.files.add(multipartFile);
+      }
+    }
 
     try {
-      final Map<String, dynamic> updateData = {};
-      if (titulo != null) updateData['titulo'] = titulo;
-      if (descripcion != null) updateData['descripcion'] = descripcion;
-      if (contenido != null) updateData['contenido'] = contenido;
-      if (categoria != null) updateData['categoria'] = categoria;
-      if (tipoMaterial != null) updateData['tipo_material'] = tipoMaterial;
-      if (imagenes != null) updateData['imagenes'] = imagenes;
-      if (puntosClave != null) updateData['puntos_clave'] = puntosClave;
-      if (accionesCorrectas != null) updateData['acciones_correctas'] = accionesCorrectas;
-      if (accionesIncorrectas != null) updateData['acciones_incorrectas'] = accionesIncorrectas;
-      if (etiquetas != null) updateData['etiquetas'] = etiquetas;
-      if (publicado != null) updateData['publicado'] = publicado;
+      // Enviar la solicitud
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
 
-      final response = await http.put(
-        url,
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-        body: json.encode(updateData),
-      ).timeout(const Duration(seconds: 15));
+      // Loguear para depuración
+      debugPrint('ContenidoEduService - update status: ${response.statusCode}');
+      debugPrint('ContenidoEduService - update body: ${response.body}');
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-      responseData['statusCode'] = response.statusCode;
-      return responseData;
+      // Manejar la respuesta, similar al método de creación
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        try {
+          final Map<String, dynamic> data = json.decode(response.body);
+          data['statusCode'] = response.statusCode;
+          return data;
+        } catch (e) {
+          return {'statusCode': response.statusCode, 'body': response.body};
+        }
+      }
 
+      // En caso de error, intentar extraer el mensaje
+      try {
+        final Map<String, dynamic> errorData = json.decode(response.body);
+        errorData['statusCode'] = response.statusCode;
+        throw Exception('Error al actualizar contenido: ${response.statusCode} - ${errorData}');
+      } catch (_) {
+        throw Exception('Error al actualizar contenido: ${response.statusCode} - ${response.body}');
+      }
     } on TimeoutException {
-      throw Exception('Tiempo de espera agotado. Revisa tu conexión.');
+      throw Exception('Tiempo de espera agotado al actualizar. Revisa tu conexión.');
     } catch (e) {
-      throw Exception('Error de conexión: $e');
+      throw Exception('Error al actualizar contenido: ${e.toString()}');
     }
   }
+
 
   // ===================================================================
   // 5. ELIMINAR CONTENIDO EDUCATIVO
@@ -256,7 +334,6 @@ class ContenidoEduService {
   // 6. OBTENER CONTENIDO POR CATEGORÍA
   // ===================================================================
   Future<List<ContenidoEducativo>> obtenerContenidoPorCategoria(String categoria, {bool publicado = true}) async {
-    final queryParams = {'publicado': publicado.toString()};
     final uri = Uri.parse('$_apiRoot/contenido-educativo/categoria/'+categoria);
     debugPrint('ContenidoEduService - Obteniendo contenido por categoría en: $uri');
 
@@ -283,7 +360,6 @@ class ContenidoEduService {
   // 7. OBTENER CONTENIDO POR TIPO DE MATERIAL
   // ===================================================================
   Future<List<ContenidoEducativo>> obtenerContenidoPorTipoMaterial(String tipoMaterial, {bool publicado = true}) async {
-    final queryParams = {'publicado': publicado.toString()};
     final uri = Uri.parse('$_apiRoot/contenido-educativo/material/'+tipoMaterial);
     debugPrint('ContenidoEduService - Obteniendo contenido por tipo de material en: $uri');
 
@@ -310,7 +386,6 @@ class ContenidoEduService {
   // 8. BUSCAR CONTENIDO EDUCATIVO
   // ===================================================================
   Future<List<ContenidoEducativo>> buscarContenidoEducativo(String termino, {bool publicado = true}) async {
-    final queryParams = {'publicado': publicado.toString()};
     final uri = Uri.parse('$_apiRoot/contenido-educativo/buscar/'+termino);
     debugPrint('ContenidoEduService - Buscando contenido en: $uri');
 

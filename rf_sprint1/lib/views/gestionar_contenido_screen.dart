@@ -26,7 +26,23 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
   final _tipoMaterialController = TextEditingController();
   final _puntosClaveController = TextEditingController();
   final _etiquetasController = TextEditingController();
-
+  final List<String> _categoria = [
+    'tipos-materiales',
+    'proceso-reciclaje',
+    'consejos-practicos',
+    'preparacion-materiales'
+  ];
+  final List<String> _materiales = [
+    'plastico',
+    'vidrio',
+    'papel',
+    'metal',
+    'organico',
+    'electronico',
+    'general'
+  ];
+  String catSelect='tipos-materiales';
+  String materialSelect='plastico';
   @override
   void initState() {
     super.initState();
@@ -105,6 +121,9 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     _tipoMaterialController.text = contenidoAEditar.tipoMaterial;
     _puntosClaveController.text = contenidoAEditar.puntosClave.join(', ');
     _etiquetasController.text = contenidoAEditar.etiquetas.join(', ');
+    catSelect=contenidoAEditar.categoria;
+    materialSelect=contenidoAEditar.tipoMaterial;
+
 
     List<File> _nuevasImagenes = [];
     bool _estaGuardando = false;
@@ -144,10 +163,11 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                   titulo: _tituloController.text,
                   descripcion: _descripcionController.text,
                   contenido: _contenidoController.text,
-                  categoria: _categoriaController.text,
-                  tipoMaterial: _tipoMaterialController.text,
+                  categoria: catSelect,
+                  tipoMaterial: materialSelect,
                   puntosClave: puntosClaveList,
                   etiquetas: etiquetasList,
+                  nuevasImagenes: _nuevasImagenes,
                 );
 
                 if (response['statusCode'] == 200) {
@@ -185,9 +205,62 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                       SizedBox(height: 15),
                       Row(
                         children: [
-                          Expanded(child: _buildTextFormField(_categoriaController, 'Categoría')),
+                          Expanded(
+                            child: Container(
+                              width: double.infinity,
+                              child: DropdownButtonFormField<String>(
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: 'Categoría',
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                value: catSelect,
+                                items: _categoria.map((String valor) {
+                                  return DropdownMenuItem<String>(
+                                    value: valor,
+                                    child: Text(
+                                      valor.replaceAll('-', ' ').toUpperCase(),
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (String? nuevoValor) {
+                                  setState(() {
+                                    catSelect = nuevoValor!;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
                           SizedBox(width: 10),
-                          Expanded(child: _buildTextFormField(_tipoMaterialController, 'Tipo de Material')),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true, // ajusta el dropdown al ancho disponible
+                              decoration: InputDecoration(
+                                labelText: 'Selecciona el tipo de material',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              value: materialSelect,
+                              items: _materiales.map((String valor) {
+                                return DropdownMenuItem<String>(
+                                  value: valor,
+                                  child: Text(
+                                    valor.toUpperCase(),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (String? nuevoValor) {
+                                setState(() {
+                                  materialSelect = nuevoValor!;
+                                });
+                              },
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: 15),
@@ -196,11 +269,15 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                       _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)'),
                       SizedBox(height: 20),
 
+
                       Text("Imágenes", style: Theme.of(context).textTheme.titleMedium),
                       SizedBox(height: 10),
-                      _nuevasImagenes.isNotEmpty
-                          ? _buildVistaPreviaImagenesLocales(_nuevasImagenes)
-                          : _buildVistaPreviaImagenesActuales(contenidoAEditar.imagenes),
+
+                      if (_nuevasImagenes.isNotEmpty)
+                        _buildVistaPreviaImagenesLocales(_nuevasImagenes)
+                      else
+                        _buildVistaPreviaImagenesActuales(contenidoAEditar.imagenes),
+
                       SizedBox(height: 10),
                       OutlinedButton.icon(
                         onPressed: _seleccionarImagenesDialog,
@@ -296,6 +373,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     );
   }
 
+
   Widget _buildImagenWidget(dynamic imagenData, {double height = 160}) {
     if (imagenData is File) {
       return Image.file(
@@ -309,13 +387,14 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
       if (imagenData.startsWith('http')) {
         urlCompleta = imagenData;
       } else {
+        // Asegúrate de que ContenidoEduService.serverBaseUrl esté correctamente definido
         urlCompleta = '${ContenidoEduService.serverBaseUrl}$imagenData';
       }
 
       return Image.network(
         urlCompleta,
         height: height,
-        width: double.infinity,
+        width: double.infinity, // Ajustado para que quepa en el ClipRRect
         fit: BoxFit.cover,
         loadingBuilder: (context, child, progress) => progress == null ? child : Center(child: CircularProgressIndicator()),
         errorBuilder: (context, error, stack) => Container(

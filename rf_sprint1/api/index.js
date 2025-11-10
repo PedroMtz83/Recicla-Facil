@@ -7,6 +7,8 @@ const conectarDB=require('./config/db');
 const router=require('./routes/router');
 const host = '0.0.0.0'; // Especifica que el servidor debe escuchar en todas las interfaces de red
 
+
+
 conectarDB();
 
 app.use(express.json());
@@ -15,6 +17,8 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.get('/', (req, res) => {
   res.send('¡Servidor Node.js funcionando correctamente!');
 });
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 app.use('/api', router);
 app.listen(port, host, () => {

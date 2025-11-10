@@ -1,6 +1,7 @@
 const express = require('express');
 const router=express.Router();
 const controlador=require('../controllers/controlador');
+const upload = require('../config/multer.config');
 
 router.post('/usuarios', controlador.crearUsuario);
 router.get('/usuarios', controlador.obtenerUsuarios);
@@ -22,13 +23,13 @@ router.delete('/quejas/:id', controlador.eliminarQueja);
 // =========================================================================
 
 // Ruta para crear nuevo contenido educativo (Admin)
-router.post('/contenido-educativo', controlador.crearContenidoEducativo);
+router.post('/contenido-educativo',upload.array('imagenes', 10), controlador.crearContenidoEducativo);
 // Ruta para obtener todo el contenido educativo (con filtros opcionales)
 router.get('/contenido-educativo', controlador.obtenerContenidoEducativo);
 // Ruta para obtener contenido educativo por ID
 router.get('/contenido-educativo/:id', controlador.obtenerContenidoPorId);
-// Ruta para actualizar contenido educativo (Admin)
-router.put('/contenido-educativo/:id', controlador.actualizarContenidoEducativo);
+// Ruta para actualizar contenido educativo (Admin) — permitimos enviar archivos ('imagenes') también
+router.put('/contenido-educativo/:id', upload.array('imagenes', 10), controlador.actualizarContenidoEducativo);
 // Ruta para eliminar contenido educativo (Admin)
 router.delete('/contenido-educativo/:id', controlador.eliminarContenidoEducativo);
 // Ruta para obtener contenido por categoría
