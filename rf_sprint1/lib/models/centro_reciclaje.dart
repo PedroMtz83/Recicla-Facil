@@ -8,7 +8,7 @@ class CentroReciclaje {
   final String direccion;
   final String telefono;
   final String horario;
-
+  final bool validado; // <-- AÑADIR ESTA LÍNEA
   CentroReciclaje({
     required this.nombre,
     required this.descripcion,
@@ -19,6 +19,7 @@ class CentroReciclaje {
     required this.direccion,
     required this.telefono,
     required this.horario,
+    this.validado = true,
   });
 
   factory CentroReciclaje.fromJson(Map<String, dynamic> json) {

@@ -12,6 +12,7 @@ class CentrosReciclajeService {
       direccion: "Av. Insurgentes 1450, Col. La Loma, Tepic, Nayarit",
       telefono: "311 212 3456",
       horario: "Lunes a Viernes: 9:00 - 17:00",
+      validado: false
     ),
     CentroReciclaje(
       nombre: "Recicla Tepic - Parque Metropolitano",
@@ -23,6 +24,7 @@ class CentrosReciclajeService {
       direccion: "Parque Metropolitano, Av. del Parque S/N, Tepic, Nayarit",
       telefono: "311 225 6789",
       horario: "Sábados y Domingos: 8:00 - 14:00",
+      validado: false
     ),
     CentroReciclaje(
       nombre: "EcoPunto Tecnológico",
