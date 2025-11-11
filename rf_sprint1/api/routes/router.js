@@ -39,4 +39,9 @@ router.get('/contenido-educativo/material/:tipo_material', controlador.obtenerCo
 // Ruta para buscar contenido educativo
 router.get('/contenido-educativo/buscar/:termino', controlador.buscarContenidoEducativo);
 
+
+// =========================================================================
+// RUTAS DE PUNTOS DE RECICLAJE
+// =========================================================================
+router.get('/puntos-reciclaje/:tipo_material', controlador.obtenerPuntosReciclajePorMaterial);
 module.exports=router;

@@ -362,6 +362,7 @@ exports.eliminarQueja = async (req, res) => {
 
 };
 
+
 // =========================================================================
 // CONTROLADORES DE CONTENIDO EDUCATIVO
 // =========================================================================
@@ -640,6 +641,32 @@ exports.buscarContenidoEducativo = async (req, res) => {
         console.error("Error en buscarContenidoEducativo:", error);
         res.status(500).json({ 
             mensaje: 'Error interno al buscar contenido educativo.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Obtener todos los puntos de reciclaje por material (activos)
+// @route   GET /api/puntos-reciclaje
+// @access  Público
+exports.obtenerPuntosReciclajePorMaterial = async (req, res)=>{
+  try {
+        const tipo_material = req.params.tipo_material;
+        const { aceptado = 'true' } = req.query;
+        const filtro = {
+            aceptado: aceptado
+        };
+        if (tipo_material && tipo_material.toLowerCase() !== 'todos') {
+            filtro.tipo_material = { $in: [tipo_material] };
+        }
+
+        const puntos = await modelos.PuntosReciclaje.find(filtro);
+        res.status(200).json(puntos);
+
+    } catch (error) {
+        console.error("Error en obtenerPuntosReciclaje:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al obtener los puntos de reciclaje por material.',
             error: error.message 
         });
     }

@@ -9,7 +9,7 @@ class ContenidoEduService {
 // ===================================================================
   // DETECTAR IP AUTOMÁTICAMENTE
   // ===================================================================
-  static const String _direccionIpLocal = '192.168.137.115'; // <- CAMBIA ESTO POR TU IP
+  static const String _direccionIpLocal = '10.47.0.132'; // <- CAMBIA ESTO POR TU IP
 
   // 2. LÓGICA DE ASIGNACIÓN: Este getter elige la IP correcta según la plataforma.
   static String get _apiRoot {

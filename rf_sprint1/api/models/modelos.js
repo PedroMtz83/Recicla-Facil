@@ -133,11 +133,64 @@ const contenidoEducativoSchema = new mongoose.Schema({
     }
 });
 
+    const puntosReciclajeSchema = new mongoose.Schema({
+    nombre:{
+    type: String,
+    required: [true, "El nombre no puede estar vacío"],
+    trim: true
+    },
+    descripcion:{
+    type: String,
+    required: [true, "La descripción no puede estar vacía"],
+    trim: true
+    },
+    latitud:{
+    type: Number,
+    required: [true, "La latitud no puede estar vacía"],
+    trim: true
+    },
+    longitud:{
+    type: Number,
+    required: [true, "La longitud no puede estar vacía"],
+    trim: true
+    },
+    icono:{
+    type: String, 
+    default: "assets/iconos/recycle_paper.png"
+    },
+    tipo_material:{
+    type: [String],
+    enum: ["Todos", "Aluminio", "Cartón", "Papel", "PET", "Vidrio"],
+    required: [true, "El tipo de material es obligatorio"]
+    },
+    direccion:{
+    type: String,
+    required: [true, "La dirección no puede estar vacía"],
+    trim: true
+    },
+    telefono:{
+    type: String,
+    required: [true, "El teléfono no puede estar vacío"],
+    trim: true
+    },
+    horario:{
+    type: String,
+    required: [true, "El horario no puede estar vacío"],
+    trim: true
+    },
+    aceptado:{
+    type: String,
+    enum: ["true", "false"],
+    default: "false"
+    }});
+
 // Middleware para actualizar la fecha de actualización antes de guardar
 contenidoEducativoSchema.pre('save', function(next) {
     this.fecha_actualizacion = Date.now();
     next();
 });
+
+
 
 quejaSchema.index({ usuario: 1, estado: 1 });
 
@@ -150,3 +203,8 @@ contenidoEducativoSchema.index({ fecha_creacion: -1 });
 exports.Usuario = mongoose.model('coleccion_usuarios', usuarioSchema);
 exports.Queja = mongoose.model('coleccion_queja', quejaSchema);
 exports.ContenidoEducativo = mongoose.model('coleccion_contenido_educativo', contenidoEducativoSchema);
+exports.PuntosReciclaje = mongoose.model(
+  'PuntoReciclaje',         
+  puntosReciclajeSchema,  
+  'coleccion_puntos_reciclaje' 
+);

@@ -584,7 +584,8 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
   }
 
 
-  void _mostrarDialogoEditar(Map<String, dynamic> usuario) {
+ Future _mostrarDialogoEditar(Map<String, dynamic> usuario) async{
+
     final nombreController = TextEditingController(text: usuario['nombre']?.toString() ?? '');
     final passwordController = TextEditingController(text: usuario['password']?.toString() ?? '');
     Object? adminValue = usuario['admin'];
@@ -599,6 +600,7 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
 
     // Variable de estado para el Switch
     bool esAdminActual = esAdminInicial;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     bool _passwordVisible = false; // <-- CAMBIO: Variable para el estado de visibilidad de la contraseña.
     showDialog(
       context: context,
@@ -734,6 +736,24 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                             icon: const Icon(Icons.save_alt_outlined, size: 18),
                             label: const Text('GUARDAR'),
                             onPressed: () async {
+                              final email = (usuario['email'] as String? ?? '').toLowerCase();
+
+                              if (authProvider.userEmail == email && authProvider.isAdmin!=esAdminActual) {
+                                await showDialog<void>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    title: const Text('Acción no permitida'),
+                                    content: const Text('No puedes quitar el rango de Admin a tu propio usuario, pruebe desde otra cuenta.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.of(ctx).pop(),
+                                        child: const Text('Entendido'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                return;
+                              }
                               final String? password = passwordController.text.isNotEmpty ? passwordController.text : null;
 
                               // Lógica de actualización (incluyendo password opcional)

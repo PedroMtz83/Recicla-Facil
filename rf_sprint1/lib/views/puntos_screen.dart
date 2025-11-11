@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import '../models/centro_reciclaje.dart';
-import '../services/centros_reciclaje_service.dart';
+import '../models/punto_reciclaje.dart';
+import '../services/puntos_reciclaje_service.dart';
 
 class PuntosScreen extends StatefulWidget {
   const PuntosScreen({super.key});
@@ -15,7 +15,7 @@ class PuntosScreen extends StatefulWidget {
 class _PuntosScreenState extends State<PuntosScreen> {
   bool _isLoading = false;
   String? _materialFiltro;
-  List<CentroReciclaje> _centrosEncontrados = [];
+  List<PuntoReciclaje> _puntosEncontrados = [];
   bool _mostrarMapa = false;
   LatLng? _currentLocation;
   MapController _mapController = MapController();
@@ -39,10 +39,26 @@ class _PuntosScreenState extends State<PuntosScreen> {
     _getCurrentLocation();
   }
 
-  void _cargarCentrosIniciales() {
-    setState(() {
-      _centrosEncontrados = CentrosReciclajeService.obtenerTodos();
-    });
+  void _cargarCentrosIniciales() async{
+    try{
+    final List<dynamic> datosCrudos = await PuntosReciclajeService.obtenerPuntosReciclajePorMaterial(_materialFiltro!);
+    final List<PuntoReciclaje> puntos = datosCrudos
+        .map((mapaCentro) => PuntoReciclaje.fromJson(mapaCentro as Map<String, dynamic>))
+        .toList();
+
+    // 5. Actualiza el estado con la LISTA DE OBJETOS ya parseada
+    if (mounted) {
+      setState(() {
+        _puntosEncontrados = puntos;
+      });
+    }
+  } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al procesar los puntos: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -135,7 +151,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  '${_centrosEncontrados.length} centros encontrados',
+                  '${_puntosEncontrados.length} centros encontrados',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
@@ -150,7 +166,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
           Expanded(
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())
-                : _centrosEncontrados.isEmpty
+                : _puntosEncontrados.isEmpty
                     ? Center(child: Text('No se encontraron centros'))
                     : _mostrarMapa ? _construirMapa() : _construirLista(),
           ),
@@ -161,9 +177,9 @@ class _PuntosScreenState extends State<PuntosScreen> {
 
   Widget _construirLista() {
     return ListView.builder(
-      itemCount: _centrosEncontrados.length,
+      itemCount: _puntosEncontrados.length,
       itemBuilder: (context, index) {
-        final centro = _centrosEncontrados[index];
+        final centro = _puntosEncontrados[index];
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: ListTile(
@@ -202,9 +218,9 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 ],
               ),
             MarkerLayer(
-              markers: _centrosEncontrados.map((centro) {
+              markers: _puntosEncontrados.map((centro) {
                 return Marker(
-                  point: LatLng(centro.latitud, centro.longitud),
+                  point: centro.coordenadas,
                   builder: (ctx) => GestureDetector(
                     onTap: () => _mostrarDetallesCentro(centro),
                     child: Tooltip(
@@ -232,7 +248,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
     );
   }
 
-  void _mostrarDetallesCentro(CentroReciclaje centro) {
+  void _mostrarDetallesCentro(PuntoReciclaje centro) {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -258,10 +274,20 @@ class _PuntosScreenState extends State<PuntosScreen> {
               SizedBox(height: 16),
               Text('Materiales aceptados:', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
+
               Wrap(
-                spacing: 8,
+                spacing: 8.0,
+                runSpacing: 4.0,
                 children: centro.tipoMaterial.map((material) {
-                  return Chip(label: Text(material), backgroundColor: Colors.green[50]);
+                  return Chip(
+                    label: Text(
+                      material,
+                      style: TextStyle(color: Colors.green[800]),
+                    ),
+                    backgroundColor: Colors.green[100],
+                    side: BorderSide(color: Colors.green.shade200),
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  );
                 }).toList(),
               ),
               SizedBox(height: 20),
@@ -293,21 +319,47 @@ class _PuntosScreenState extends State<PuntosScreen> {
     );
   }
 
-  void _buscarPuntos() {
+  void _buscarPuntos() async {
     setState(() => _isLoading = true);
+    debugPrint('--- Widget: Iniciando _buscarPuntos ---');
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      setState(() {
-        _isLoading = false;
-        if (_materialFiltro == 'Todos') {
-          _centrosEncontrados = CentrosReciclajeService.obtenerTodos();
-        } else {
-          _centrosEncontrados = CentrosReciclajeService.obtenerTodos().where((centro) {
-            return centro.tipoMaterial.any((material) => 
-              material.toLowerCase().contains(_materialFiltro!.toLowerCase()));
-          }).toList();
-        }
-      });
-    });
+    try {
+      final List<dynamic> datosRecibidosDelServicio =
+      await PuntosReciclajeService.obtenerPuntosReciclajePorMaterial(
+          _materialFiltro!);
+
+      debugPrint('--- Widget: ¿Los datos llegaron a la función? ${datosRecibidosDelServicio != null ? 'SÍ' : 'NO'}');
+      if (datosRecibidosDelServicio != null) {
+        debugPrint('--- Widget: Elementos recibidos en la función: ${datosRecibidosDelServicio.length}');
+      }
+
+      final List<PuntoReciclaje> puntos = datosRecibidosDelServicio
+          .map((mapaCentro) =>
+          PuntoReciclaje.fromJson(mapaCentro as Map<String, dynamic>))
+          .toList();
+
+      debugPrint('--- Widget: Parseo a objetos PuntoReciclaje exitoso. Puntos creados: ${puntos.length}'); // <-- Añade esto
+
+      if (mounted) {
+        setState(() {
+          _puntosEncontrados = puntos;
+        });
+      }
+    } catch (e, stackTrace) {
+      debugPrint('--- Widget: ¡ERROR CAPTURADO! ---');
+      debugPrint('Error: $e');
+      debugPrint('Stack Trace: $stackTrace');
+      // -----------------------------------------
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al procesar los puntos: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      debugPrint('--- Widget: Fin de _buscarPuntos ---');
+    }
   }
 }
