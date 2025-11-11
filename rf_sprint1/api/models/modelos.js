@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const materialesPermitidos = ["Todos", "Aluminio", "Cartón", "Papel", "PET", "Vidrio"];
+const estadosPermitidos = ["true", "false"];
 
 //modelo para usuarios
 const usuarioSchema = new mongoose.Schema({
@@ -133,6 +135,7 @@ const contenidoEducativoSchema = new mongoose.Schema({
     }
 });
 
+// Modelo para los puntos de reciclaje
     const puntosReciclajeSchema = new mongoose.Schema({
     nombre:{
     type: String,
@@ -160,8 +163,14 @@ const contenidoEducativoSchema = new mongoose.Schema({
     },
     tipo_material:{
     type: [String],
-    enum: ["Todos", "Aluminio", "Cartón", "Papel", "PET", "Vidrio"],
-    required: [true, "El tipo de material es obligatorio"]
+    required: [true, "El tipo de material es obligatorio"],
+    validate: {
+            validator: function(arrayDeMateriales) {
+                if (!arrayDeMateriales || arrayDeMateriales.length === 0) return false;
+                return arrayDeMateriales.every(material => materialesPermitidos.includes(material));
+            },
+            message: props => `El array contiene materiales no válidos. Solo se permiten: ${materialesPermitidos.join(', ')}`
+        }
     },
     direccion:{
     type: String,
@@ -180,7 +189,8 @@ const contenidoEducativoSchema = new mongoose.Schema({
     },
     aceptado:{
     type: String,
-    enum: ["true", "false"],
+    required: true,
+    enum: estadosPermitidos,
     default: "false"
     }});
 

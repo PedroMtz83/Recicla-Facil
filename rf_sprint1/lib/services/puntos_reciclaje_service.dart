@@ -38,7 +38,7 @@ class PuntosReciclajeService {
   // 1. OBTENER PERFIL DE USUARIO
   // ===================================================================
   static Future<List<dynamic>> obtenerPuntosReciclajePorMaterial(String material) async {
-    final url = Uri.parse('$_apiRoot/puntos-reciclaje/'+material);
+    final url = Uri.parse('$_apiRoot/puntos-reciclaje/material/'+material);
     debugPrint('Puntos_reciclaje_Service - Obteniendo datos en: $url');
 
     try {
@@ -64,7 +64,7 @@ class PuntosReciclajeService {
   }
 
   static Future<List<dynamic>> obtenerPuntosReciclajeEstado(String estado) async {
-    final url = Uri.parse('$_apiRoot/puntos-reciclaje/'+estado);
+    final url = Uri.parse('$_apiRoot/puntos-reciclaje/estado/'+estado);
     debugPrint('Puntos_reciclaje_Service - Obteniendo datos en: $url');
 
     try {

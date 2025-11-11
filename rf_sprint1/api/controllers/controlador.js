@@ -647,7 +647,7 @@ exports.buscarContenidoEducativo = async (req, res) => {
 };
 
 // @desc    Obtener todos los puntos de reciclaje por material (aceptado)
-// @route   GET /api/puntos-reciclaje/:material
+// @route   GET /api/puntos-reciclaje/material/:material
 // @access  Público
 exports.obtenerPuntosReciclajePorMaterial = async (req, res)=>{
   try {
@@ -672,24 +672,32 @@ exports.obtenerPuntosReciclajePorMaterial = async (req, res)=>{
     }
 };
 
-// @desc    Obtener todos los puntos de reciclaje aceptados
-// @route   GET /api/puntos-reciclaje/:aceptado
+// @desc    Obtener todos los puntos de reciclaje de acuerdo al estado
+// @route   GET /api/puntos-reciclaje/estado/:aceptado
 // @access  Público
 exports.obtenerPuntosReciclajeEstado = async (req, res)=>{
-            const estado = req.params.aceptado;
-  try {
-        const filtro = {
-            aceptado: estado
-        };
-     
+    try {
+        console.log("--- INICIO DE LA SOLICITUD ---");
+
+        const estadoAceptado = req.params.aceptado;
+        console.log(`Parámetro recibido de la URL: ${estadoAceptado} (Tipo: ${typeof estadoAceptado})`);
+
+        if (estadoAceptado !== 'true' && estadoAceptado !== 'false') {
+            return res.status(400).json({ mensaje: 'Parámetro inválido.' });
+        }
+
+        const filtro = { aceptado: estadoAceptado };
+        console.log(`Filtro que se usará en la consulta: ${JSON.stringify(filtro)}`);
+
         const puntos = await modelos.PuntosReciclaje.find(filtro);
+
+        console.log(`Consulta a la BD ejecutada. Número de documentos encontrados: ${puntos.length}`);
+        console.log("--- FIN DE LA SOLICITUD ---");
+
         res.status(200).json(puntos);
 
     } catch (error) {
-        console.error("Error en obtenerPuntosReciclajeAceptados:", error);
-        res.status(500).json({ 
-            mensaje: 'Error interno al obtener los puntos de reciclaje aceptados.',
-            error: error.message 
-        });
+        console.error("¡ERROR FATAL EN EL CONTROLADOR!", error);
+        res.status(500).json({ mensaje: 'Error interno.' });
     }
 };

@@ -14,8 +14,8 @@ class AdminPuntosScreen extends StatefulWidget {
 class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   int _selectedIndex = 0;
 
-  late List<PuntoReciclaje> _puntosGestion;
-  late List<PuntoReciclaje> _puntosPorValidar;
+   List<PuntoReciclaje> _puntosGestion=[];
+   List<PuntoReciclaje> _puntosPorValidar=[];
   bool _isLoading = true;
 
   @override
@@ -25,6 +25,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   }
 
   Future<void> _cargarDatos() async {
+
     try {
       final resultadosDinamicos = await Future.wait([
         PuntosReciclajeService.obtenerPuntosReciclajeEstado("true"),
@@ -87,7 +88,9 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-      body: IndexedStack(
+      body: _isLoading ? Center (
+        child: CircularProgressIndicator(),
+      ): IndexedStack(
         index: _selectedIndex,
         children: _buildScreens(),
       ),
