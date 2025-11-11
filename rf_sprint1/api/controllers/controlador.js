@@ -677,10 +677,7 @@ exports.obtenerPuntosReciclajePorMaterial = async (req, res)=>{
 // @access  Público
 exports.obtenerPuntosReciclajeEstado = async (req, res)=>{
     try {
-        console.log("--- INICIO DE LA SOLICITUD ---");
-
         const estadoAceptado = req.params.aceptado;
-        console.log(`Parámetro recibido de la URL: ${estadoAceptado} (Tipo: ${typeof estadoAceptado})`);
 
         if (estadoAceptado !== 'true' && estadoAceptado !== 'false') {
             return res.status(400).json({ mensaje: 'Parámetro inválido.' });
@@ -691,13 +688,9 @@ exports.obtenerPuntosReciclajeEstado = async (req, res)=>{
 
         const puntos = await modelos.PuntosReciclaje.find(filtro);
 
-        console.log(`Consulta a la BD ejecutada. Número de documentos encontrados: ${puntos.length}`);
-        console.log("--- FIN DE LA SOLICITUD ---");
-
         res.status(200).json(puntos);
 
     } catch (error) {
-        console.error("¡ERROR FATAL EN EL CONTROLADOR!", error);
         res.status(500).json({ mensaje: 'Error interno.' });
     }
 };
