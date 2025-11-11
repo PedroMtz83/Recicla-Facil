@@ -157,11 +157,9 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                     TextButton.icon(
                       icon: const Icon(Icons.delete_outline, size: 20),
                       label: const Text('Eliminar'),
-                      onPressed: () {
-                        // TODO: Lógica para eliminar el centro
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Eliminar: ${centro.nombre}')),
-                        );
+                      onPressed: () async {
+
+                        _eliminarPunto(centro.id);
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red[700],
@@ -179,6 +177,32 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   }
 
   // lib/views/admin_puntos_screen.dart
+
+  void _mostrarSnackBar(String mensaje, {bool esError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensaje),
+        backgroundColor: esError ? Colors.red : Colors.green,
+      ),
+    );
+  }
+
+  Future<void> _aceptarPunto(PuntoReciclaje punto) async {
+    try {
+      final resultado = await PuntosReciclajeService.aceptarPunto(
+          punto.id);
+      if (mounted) {
+        if (resultado['statusCode'] == 200) {
+          _mostrarSnackBar('Punto aceptado correctamente.');
+          _cargarDatos();
+        } else {
+          _mostrarSnackBar(resultado['mensaje'] ?? 'Error al aceptar el punto.', esError: true);
+        }
+      }
+    } catch (e) {
+      if (mounted) _mostrarSnackBar(e.toString(), esError: true);
+    }
+  }
 
 // --- PANTALLA 2: VALIDAR PUNTOS (VERSIÓN MEJORADA) ---
   Widget _buildValidarScreen() {
@@ -260,34 +284,10 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.thumb_down_outlined),
-                        label: const Text('Rechazar'),
-                        onPressed: () {
-                          // TODO: Lógica para rechazar el punto
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('Rechazado: ${centro.nombre}')),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.red.shade400),
-                          foregroundColor: Colors.red[800],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.thumb_up_outlined),
                         label: const Text('Aceptar'),
-                        onPressed: () {
-                          // TODO: Lógica para aceptar/validar el punto
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('Aceptado: ${centro.nombre}')),
-                          );
-                        },
+                        onPressed: () => _aceptarPunto(centro),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[600],
                           foregroundColor: Colors.white,
@@ -332,4 +332,45 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     );
   }
 
+  void _eliminarPunto(String puntoId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title:  Text('Confirmar Eliminación'),
+        content:  Text('¿Estás seguro de que deseas eliminar este punto? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child:  Text('No'),
+          ),
+          // Botón rojo para confirmar la eliminación
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            icon:  Icon(Icons.warning),
+            label:  Text('Sí, Eliminar'),
+            onPressed: () async {
+              // Bloquea múltiples clics
+              if (_isLoading) return;
+              setState(() => _isLoading = true);
+              Navigator.of(ctx).pop();
+
+              try {
+                bool resultado = await PuntosReciclajeService.eliminarPuntoReciclaje(puntoId);
+                if (resultado) {
+                  _mostrarSnackBar('Punto eliminado correctamente.');
+                  _cargarDatos();
+                } else {
+                  _mostrarSnackBar('Error al eliminar el punto.');
+                }
+              } catch (e) {
+                _mostrarSnackBar(e.toString(), esError: true);
+              } finally {
+                setState(() => _isLoading = false);
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
 }

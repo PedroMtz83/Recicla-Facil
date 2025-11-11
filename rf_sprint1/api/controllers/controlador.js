@@ -684,8 +684,6 @@ exports.obtenerPuntosReciclajeEstado = async (req, res)=>{
         }
 
         const filtro = { aceptado: estadoAceptado };
-        console.log(`Filtro que se usará en la consulta: ${JSON.stringify(filtro)}`);
-
         const puntos = await modelos.PuntosReciclaje.find(filtro);
 
         res.status(200).json(puntos);
@@ -694,3 +692,110 @@ exports.obtenerPuntosReciclajeEstado = async (req, res)=>{
         res.status(500).json({ mensaje: 'Error interno.' });
     }
 };
+
+// @desc    Cambiar el punto de reciclaje de no estar aceptado a aceptado.
+// @route   PUT /api/puntos-reciclaje/estado/:id
+// @access  Público
+exports.aceptarPunto = async (req, res) => {
+    try {
+        const puntoId = req.params.id; 
+        const puntoAceptado = await modelos.PuntosReciclaje.findByIdAndUpdate(
+            puntoId,
+            
+                {aceptado: "true"},
+                { new: true }
+            
+        );
+
+        if (!puntoAceptado) {
+            return res.status(404).json({ mensaje: 'No se encontró un punto con ese ID.' });
+        }
+
+        res.status(200).json({
+            mensaje: 'El punto se aceptó con éxito.',
+            punto: puntoAceptado
+        });
+
+    } catch (error) {
+        console.error("Error al aceptar el punto:", error);
+        res.status(500).json({ mensaje: 'Error interno del servidor.' });
+    }
+};
+
+// @desc    Editar un registro de puntos de reciclaje
+// @route   PUT /api/puntos-reciclaje/:id
+// @access  Público
+exports.actualizarPuntoReciclaje = async (req, res) => {
+     try {
+        const puntoId = req.params.id;
+        const {
+            nombre,
+            descripcion,
+            latitud,
+            longitud,
+	        icono,
+            tipo_material,
+            direccion,
+            telefono,
+            horario,
+            aceptado,
+        } = req.body;
+
+        const puntoExistente = await modelos.PuntosReciclaje.findById(puntoId);
+        if (!puntoExistente) {
+            return res.status(404).json({ mensaje: 'Punto de reciclaje no encontrado.' });
+        }
+
+        const update = {};
+        if (nombre !== undefined) update.nombre = nombre.trim();
+        if (descripcion !== undefined) update.descripcion = descripcion.trim();
+        if (latitud !== undefined) update.latitud = latitud;
+        if (longitud !== undefined) update.longitud = longitud;
+	    if (icono !== undefined) update.icono = icono;
+        if (tipo_material !== undefined) update.tipo_material = tipo_material;
+        if (direccion !== undefined) update.direccion = direccion;
+        if (telefono !== undefined) update.telefono = telefono;
+        if (horario !== undefined) update.horario = horario;
+        if (aceptado !== undefined) update.aceptado = aceptado;
+
+        const puntoActualizado = await modelos.PuntosReciclaje.findByIdAndUpdate(
+            puntoId,
+            update,
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            mensaje: 'Punto de reciclaje actualizado con éxito.',
+            punto: puntoActualizado
+        });
+
+    } catch (error) {
+        console.error("Error en actualizarPuntoReciclaje:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al actualizar el punto de reciclaje.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Eliminar un registro de puntos de reciclaje
+// @route   DELETE /api/puntos-reciclaje/:id
+// @access  Público
+exports.eliminarPuntoReciclaje = async (req, res) => {
+    try {
+        const puntoId = req.params.id;
+
+        const puntoEliminado = await modelos.PuntosReciclaje.findByIdAndDelete(puntoId);
+
+        if (!puntoEliminado) {
+            return res.status(404).json({ mensaje: 'No se encontró un punto de reciclaje con ese ID.' });
+        }
+
+        res.status(200).json({ mensaje: 'Punto de reciclaje eliminado exitosamente.' });
+
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error del servidor al querer eliminar el punto de reciclaje.' });
+    }
+};
+
+

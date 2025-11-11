@@ -1,6 +1,7 @@
 import 'package:latlong2/latlong.dart';
 
 class PuntoReciclaje {
+  final String id;
   final String nombre;
   final String descripcion;
   final LatLng coordenadas;
@@ -12,6 +13,7 @@ class PuntoReciclaje {
   final String aceptado;
 
   PuntoReciclaje({
+    required this.id,
     required this.nombre,
     required this.descripcion,
     required this.coordenadas,
@@ -28,6 +30,7 @@ class PuntoReciclaje {
     final lon = (json['longitud'] as num?)?.toDouble() ?? -104.8946; // Longitud por defecto
     final List<dynamic> materialesDinamicos = json['tipo_material'] ?? [];
     return PuntoReciclaje(
+      id: json["_id"],
       nombre: json['nombre'],
       descripcion: json['descripcion'],
         coordenadas: LatLng(

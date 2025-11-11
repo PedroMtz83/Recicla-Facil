@@ -39,10 +39,13 @@ router.get('/contenido-educativo/material/:tipo_material', controlador.obtenerCo
 // Ruta para buscar contenido educativo
 router.get('/contenido-educativo/buscar/:termino', controlador.buscarContenidoEducativo);
 
-
 // =========================================================================
 // RUTAS DE PUNTOS DE RECICLAJE
 // =========================================================================
 router.get('/puntos-reciclaje/material/:tipo_material', controlador.obtenerPuntosReciclajePorMaterial);
 router.get('/puntos-reciclaje/estado/:aceptado', controlador.obtenerPuntosReciclajeEstado);
+router.put('/puntos-reciclaje/:id', controlador.actualizarPuntoReciclaje);
+router.put('/puntos-reciclaje/estado/:id', controlador.aceptarPunto);
+router.delete('/puntos-reciclaje/:id', controlador.eliminarPuntoReciclaje);
+
 module.exports=router;

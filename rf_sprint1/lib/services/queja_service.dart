@@ -148,7 +148,7 @@ class QuejaService {
   // 5. ATENDER QUEJA
   // ===================================================================
   Future<Map<String, dynamic>> atenderQueja(String quejaId, String respuestaAdmin) async {
-    final url = Uri.parse('$_apiRoot/quejas/quejaId');
+    final url = Uri.parse('$_apiRoot/quejas/$quejaId');
     debugPrint('QuejaService - Atendiendo queja en: $url');
 
     try {
@@ -173,7 +173,7 @@ class QuejaService {
   // 6. ELIMINAR QUEJA
   // ===================================================================
   Future<Map<String, dynamic>> eliminarQueja(String quejaId) async {
-    final url = Uri.parse('$_apiRoot/quejas/quejaId');
+    final url = Uri.parse('$_apiRoot/quejas/$quejaId');
     debugPrint('QuejaService - Eliminando queja en: $url');
 
     try {
