@@ -646,8 +646,8 @@ exports.buscarContenidoEducativo = async (req, res) => {
     }
 };
 
-// @desc    Obtener todos los puntos de reciclaje por material (activos)
-// @route   GET /api/puntos-reciclaje
+// @desc    Obtener todos los puntos de reciclaje por material (aceptado)
+// @route   GET /api/puntos-reciclaje/:material
 // @access  Público
 exports.obtenerPuntosReciclajePorMaterial = async (req, res)=>{
   try {
@@ -667,6 +667,28 @@ exports.obtenerPuntosReciclajePorMaterial = async (req, res)=>{
         console.error("Error en obtenerPuntosReciclaje:", error);
         res.status(500).json({ 
             mensaje: 'Error interno al obtener los puntos de reciclaje por material.',
+            error: error.message 
+        });
+    }
+};
+
+// @desc    Obtener todos los puntos de reciclaje aceptados
+// @route   GET /api/puntos-reciclaje/:aceptado
+// @access  Público
+exports.obtenerPuntosReciclajeEstado = async (req, res)=>{
+            const estado = req.params.aceptado;
+  try {
+        const filtro = {
+            aceptado: estado
+        };
+     
+        const puntos = await modelos.PuntosReciclaje.find(filtro);
+        res.status(200).json(puntos);
+
+    } catch (error) {
+        console.error("Error en obtenerPuntosReciclajeAceptados:", error);
+        res.status(500).json({ 
+            mensaje: 'Error interno al obtener los puntos de reciclaje aceptados.',
             error: error.message 
         });
     }

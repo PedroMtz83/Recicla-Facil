@@ -44,4 +44,5 @@ router.get('/contenido-educativo/buscar/:termino', controlador.buscarContenidoEd
 // RUTAS DE PUNTOS DE RECICLAJE
 // =========================================================================
 router.get('/puntos-reciclaje/:tipo_material', controlador.obtenerPuntosReciclajePorMaterial);
+router.get('/puntos-reciclaje/:aceptado', controlador.obtenerPuntosReciclajeEstado);
 module.exports=router;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:rf_sprint1/views/admin_puntos_screen.dart';
 import 'package:rf_sprint1/views/contenido_screen.dart';
 
 // Importa tus vistas y providers
@@ -78,13 +79,15 @@ class _HomeScreenState extends State<HomeScreen> {
     QuejasTabsScreen(),
     ContenidoScreen(),
     PuntosScreen(),
+    AdminPuntosScreen()
   ];
 
   final List<String> _pageTitles = [
     "Mi perfil",
     "Quejas y sugerencias",
     'Contenido informativo',
-    'Puntos de reciclaje'
+    'Puntos de reciclaje',
+    'Gestionar Puntos de reciclaje'
   ];
 
   void _onItemTapped(int index) {
@@ -160,6 +163,15 @@ class _HomeScreenState extends State<HomeScreen> {
               selectedTileColor: Colors.green.withOpacity(0.1),
               onTap: () {
                 _onItemTapped(3);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.admin_panel_settings),
+              title: Text('Gestionar Puntos de reciclaje'),
+              selected: _currentIndex == 4,
+              selectedTileColor: Colors.green.withOpacity(0.1),
+              onTap: () {
+                _onItemTapped(4);
               },
             ),
           ],

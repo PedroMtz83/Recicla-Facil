@@ -62,4 +62,30 @@ class PuntosReciclajeService {
       return [];
     }
   }
+
+  static Future<List<dynamic>> obtenerPuntosReciclajeEstado(String estado) async {
+    final url = Uri.parse('$_apiRoot/puntos-reciclaje/'+estado);
+    debugPrint('Puntos_reciclaje_Service - Obteniendo datos en: $url');
+
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final dynamic datosDecodificados = json.decode(response.body);
+
+        if (datosDecodificados is List) {
+          debugPrint('PuntosService - Éxito. Se recibieron ${datosDecodificados.length} elementos.');
+          return datosDecodificados;
+        } else {
+          debugPrint('PuntosService - Error: La respuesta no es una lista, es un ${datosDecodificados.runtimeType}.');
+          return [];
+        }
+      } else {
+        debugPrint('PuntosService - Error del servidor. Código: ${response.statusCode}. Cuerpo: ${response.body}');
+        return [];
+      }
+    } catch (e) {
+      debugPrint('PuntosService - Excepción capturada: $e');
+      return [];
+    }
+  }
 }
