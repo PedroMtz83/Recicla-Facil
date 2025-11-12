@@ -798,4 +798,285 @@ exports.eliminarPuntoReciclaje = async (req, res) => {
     }
 };
 
+// =========================================================================
+// CONTROLADORES PARA SOLICITUDES DE PUNTOS DE RECICLAJE
+// =========================================================================
 
+const { SolicitudPunto, PuntosReciclaje } = require('../models/modelos');
+
+// @desc    Crear una nueva solicitud de punto de reciclaje
+// @route   POST /api/solicitudes-puntos
+// @access  Privado (Usuarios autenticados)
+exports.crearSolicitudPunto = async (req, res) => {
+    try {
+        const {
+            nombre,
+            descripcion,
+            direccion,
+            ubicacion,
+            tipo_material,
+            telefono,
+            horario
+        } = req.body;
+
+        // Validar campos requeridos
+        if (!nombre || !descripcion || !direccion || !ubicacion || !tipo_material) {
+            return res.status(400).json({
+                success: false,
+                error: 'Faltan campos obligatorios'
+            });
+        }
+
+        const nuevaSolicitud = new SolicitudPunto({
+            nombre,
+            descripcion,
+            direccion,
+            ubicacion,
+            tipo_material,
+            telefono: telefono || '',
+            horario: horario || '',
+            usuarioSolicitante: req.userId,
+            estado: 'pendiente'
+        });
+
+        await nuevaSolicitud.save();
+
+        res.status(201).json({
+            success: true,
+            data: nuevaSolicitud,
+            message: 'Solicitud creada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error creando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor: ' + error.message
+        });
+    }
+};
+
+// @desc    Obtener las solicitudes del usuario actual
+// @route   GET /api/solicitudes-puntos/mis-solicitudes
+// @access  Privado (Usuarios autenticados)
+exports.obtenerMisSolicitudes = async (req, res) => {
+    try {
+        const solicitudes = await SolicitudPunto.find({ 
+            usuarioSolicitante: req.userId 
+        })
+        .populate('usuarioSolicitante', 'nombre email')
+        .populate('adminRevisor', 'nombre email')
+        .sort({ fechaCreacion: -1 });
+
+        res.json({
+            success: true,
+            data: solicitudes
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo solicitudes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener todas las solicitudes pendientes
+// @route   GET /api/solicitudes-puntos/admin/pendientes
+// @access  Privado (Administradores)
+exports.obtenerSolicitudesPendientes = async (req, res) => {
+    try {
+        const solicitudes = await SolicitudPunto.find({ estado: 'pendiente' })
+            .populate('usuarioSolicitante', 'nombre email')
+            .sort({ fechaCreacion: 1 });
+
+        res.json({
+            success: true,
+            data: solicitudes
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo solicitudes pendientes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener todas las solicitudes con filtros
+// @route   GET /api/solicitudes-puntos/admin/todas
+// @access  Privado (Administradores)
+exports.obtenerTodasLasSolicitudes = async (req, res) => {
+    try {
+        const { estado } = req.query;
+        const filter = estado ? { estado } : {};
+
+        const solicitudes = await SolicitudPunto.find(filter)
+            .populate('usuarioSolicitante', 'nombre email')
+            .populate('adminRevisor', 'nombre email')
+            .sort({ fechaCreacion: -1 });
+
+        res.json({
+            success: true,
+            data: solicitudes
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo todas las solicitudes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Aprobar una solicitud de punto de reciclaje
+// @route   PUT /api/solicitudes-puntos/admin/:id/aprobar
+// @access  Privado (Administradores)
+exports.aprobarSolicitudPunto = async (req, res) => {
+    try {
+        const { comentariosAdmin } = req.body;
+        
+        const solicitud = await SolicitudPunto.findById(req.params.id)
+            .populate('usuarioSolicitante', 'nombre email');
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        if (solicitud.estado !== 'pendiente') {
+            return res.status(400).json({
+                success: false,
+                error: 'La solicitud ya fue procesada'
+            });
+        }
+
+        // 1. Actualizar la solicitud
+        solicitud.estado = 'aprobada';
+        solicitud.adminRevisor = req.userId;
+        solicitud.comentariosAdmin = comentariosAdmin || 'Solicitud aprobada';
+        solicitud.fechaRevision = new Date();
+        
+        await solicitud.save();
+
+        // 2. Crear el punto de reciclaje
+        const direccionCompleta = `${solicitud.direccion.calle} ${solicitud.direccion.numero}, ${solicitud.direccion.colonia}, ${solicitud.direccion.ciudad}, ${solicitud.direccion.estado}`;
+        
+        const nuevoPunto = new PuntosReciclaje({
+            nombre: solicitud.nombre,
+            descripcion: solicitud.descripcion,
+            latitud: solicitud.ubicacion.latitud,
+            longitud: solicitud.ubicacion.longitud,
+            icono: solicitud.icono,
+            tipo_material: solicitud.tipo_material,
+            direccion: direccionCompleta,
+            telefono: solicitud.telefono,
+            horario: solicitud.horario,
+            aceptado: "true"
+        });
+
+        await nuevoPunto.save();
+
+        res.json({
+            success: true,
+            data: {
+                solicitud: solicitud,
+                puntoCreado: nuevoPunto
+            },
+            message: 'Solicitud aprobada y punto creado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error aprobando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor: ' + error.message
+        });
+    }
+};
+
+// @desc    Rechazar una solicitud de punto de reciclaje
+// @route   PUT /api/solicitudes-puntos/admin/:id/rechazar
+// @access  Privado (Administradores)
+exports.rechazarSolicitudPunto = async (req, res) => {
+    try {
+        const { comentariosAdmin } = req.body;
+        
+        if (!comentariosAdmin || comentariosAdmin.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                error: 'Los comentarios son obligatorios al rechazar una solicitud'
+            });
+        }
+
+        const solicitud = await SolicitudPunto.findById(req.params.id);
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        if (solicitud.estado !== 'pendiente') {
+            return res.status(400).json({
+                success: false,
+                error: 'La solicitud ya fue procesada'
+            });
+        }
+
+        solicitud.estado = 'rechazada';
+        solicitud.adminRevisor = req.userId;
+        solicitud.comentariosAdmin = comentariosAdmin;
+        solicitud.fechaRevision = new Date();
+        
+        await solicitud.save();
+
+        res.json({
+            success: true,
+            data: solicitud,
+            message: 'Solicitud rechazada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error rechazando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener estadísticas de solicitudes
+// @route   GET /api/solicitudes-puntos/admin/estadisticas
+// @access  Privado (Administradores)
+exports.obtenerEstadisticasSolicitudes = async (req, res) => {
+    try {
+        const totalSolicitudes = await SolicitudPunto.countDocuments();
+        const solicitudesPendientes = await SolicitudPunto.countDocuments({ estado: 'pendiente' });
+        const solicitudesAprobadas = await SolicitudPunto.countDocuments({ estado: 'aprobada' });
+        const solicitudesRechazadas = await SolicitudPunto.countDocuments({ estado: 'rechazada' });
+
+        res.json({
+            success: true,
+            data: {
+                total: totalSolicitudes,
+                pendientes: solicitudesPendientes,
+                aprobadas: solicitudesAprobadas,
+                rechazadas: solicitudesRechazadas
+            }
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
