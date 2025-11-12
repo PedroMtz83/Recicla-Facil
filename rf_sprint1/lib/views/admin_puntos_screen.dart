@@ -285,6 +285,18 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
+                        icon: const Icon(Icons.thumb_down_outlined),
+                        label: const Text('Rechazar'),
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[600],
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ElevatedButton.icon(
                         icon: const Icon(Icons.thumb_up_outlined),
                         label: const Text('Aceptar'),
                         onPressed: () => _aceptarPunto(centro),

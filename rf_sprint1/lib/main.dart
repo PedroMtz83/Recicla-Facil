@@ -97,6 +97,23 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.pop(context);
   }
 
+  Widget _buildCurrentPage() {
+    switch (_currentIndex) {
+      case 0:
+        return ProfileScreen();
+      case 1:
+        return QuejasTabsScreen();
+      case 2:
+        return ContenidoScreen();
+      case 3:
+        return PuntosScreen();
+      case 4:
+        return AdminPuntosScreen();
+      default:
+        return ProfileScreen();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: _pages[_currentIndex],
+      body: _buildCurrentPage(),
     );
   }
 
