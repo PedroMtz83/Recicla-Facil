@@ -7,6 +7,7 @@ import 'package:rf_sprint1/views/contenido_screen.dart';
 // Importa tus vistas y providers
 import 'package:rf_sprint1/views/perfilUsuario_screen.dart';
 import 'package:rf_sprint1/views/puntos_screen.dart';
+import 'package:rf_sprint1/views/puntos_tabs_screen.dart';
 import 'package:rf_sprint1/views/quejas_tabs_screen.dart';
 import 'package:rf_sprint1/views/register_screen.dart';
 import 'package:rf_sprint1/views/login_screen.dart';
@@ -106,9 +107,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return ContenidoScreen();
       case 3:
-        return PuntosScreen();
-      case 4:
-        return AdminPuntosScreen();
+        return PuntosTabsScreen();
       default:
         return ProfileScreen();
     }
@@ -180,15 +179,6 @@ class _HomeScreenState extends State<HomeScreen> {
               selectedTileColor: Colors.green.withOpacity(0.1),
               onTap: () {
                 _onItemTapped(3);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.admin_panel_settings),
-              title: Text('Gestionar Puntos de reciclaje'),
-              selected: _currentIndex == 4,
-              selectedTileColor: Colors.green.withOpacity(0.1),
-              onTap: () {
-                _onItemTapped(4);
               },
             ),
           ],

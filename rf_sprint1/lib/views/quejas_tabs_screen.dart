@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import '../widgets/formulario_queja_widget.dart';
 import 'gestionquejas_screen.dart';
-import 'login_screen.dart';
 
 class QuejasTabsScreen extends StatefulWidget {
   const QuejasTabsScreen({super.key});
