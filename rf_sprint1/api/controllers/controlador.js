@@ -1032,4 +1032,456 @@ exports.eliminarPuntoReciclaje = async (req, res) => {
     }
 };
 
+// =========================================================================
+// CONTROLADORES PARA SOLICITUDES DE PUNTOS DE RECICLAJE - ACTUALIZADOS
+// =========================================================================
 
+const { SolicitudPunto, PuntosReciclaje } = require('../models/modelos');
+const { geocodificarDireccion } = require('../services/geocoding');
+
+// @desc    Crear una nueva solicitud de punto de reciclaje
+// @route   POST /api/solicitudes-puntos
+// @access  Con autenticación simple
+exports.crearSolicitudPunto = async (req, res) => {
+    try {
+        const {
+            nombre,
+            descripcion,
+            direccion,
+            tipo_material,
+            telefono,
+            horario
+        } = req.body;
+
+        // Validar campos requeridos
+        if (!nombre || !descripcion || !direccion || !tipo_material) {
+            return res.status(400).json({
+                success: false,
+                error: 'Faltan campos obligatorios: nombre, descripción, dirección y tipo de material'
+            });
+        }
+
+        // Geocodificar la dirección para obtener coordenadas
+        const coordenadas = await geocodificarDireccion(
+            direccion.calle,
+            direccion.numero,
+            direccion.colonia,
+            direccion.ciudad || 'Tepic',
+            direccion.estado || 'Nayarit',
+            direccion.pais || 'México'
+        );
+
+        // Crear la solicitud con las coordenadas geocodificadas
+        const nuevaSolicitud = new SolicitudPunto({
+            nombre,
+            descripcion,
+            direccion,
+            tipo_material,
+            telefono: telefono || '',
+            horario: horario || '',
+            usuarioSolicitante: req.usuario.nombre, // Del middleware authSimple
+            estado: 'pendiente',
+            ubicacion: {
+                latitud: coordenadas.latitud,
+                longitud: coordenadas.longitud
+            }
+        });
+
+        await nuevaSolicitud.save();
+
+        res.status(201).json({
+            success: true,
+            data: nuevaSolicitud,
+            message: 'Solicitud creada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error creando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor: ' + error.message
+        });
+    }
+};
+
+// @desc    Obtener las solicitudes del usuario actual
+// @route   GET /api/solicitudes-puntos/mis-solicitudes
+// @access  Con autenticación simple
+exports.obtenerMisSolicitudes = async (req, res) => {
+    try {
+        const solicitudes = await SolicitudPunto.find({ 
+            usuarioSolicitante: req.usuario.nombre // Del middleware authSimple
+        })
+        .sort({ fechaCreacion: -1 });
+
+        res.json({
+            success: true,
+            data: solicitudes
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo solicitudes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener todas las solicitudes pendientes
+// @route   GET /api/solicitudes-puntos/admin/pendientes
+// @access  Solo administradores (autenticación simple)
+exports.obtenerSolicitudesPendientes = async (req, res) => {
+    try {
+        const solicitudes = await SolicitudPunto.find({ estado: 'pendiente' })
+            .sort({ fechaCreacion: 1 });
+
+        res.json({
+            success: true,
+            data: solicitudes
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo solicitudes pendientes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener todas las solicitudes con filtros
+// @route   GET /api/solicitudes-puntos/admin/todas
+// @access  Solo administradores (autenticación simple)
+exports.obtenerTodasLasSolicitudes = async (req, res) => {
+    try {
+        const { estado } = req.query;
+        const filter = estado ? { estado } : {};
+
+        const solicitudes = await SolicitudPunto.find(filter)
+            .sort({ fechaCreacion: -1 });
+
+        res.json({
+            success: true,
+            data: solicitudes
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo todas las solicitudes:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Aprobar una solicitud de punto de reciclaje
+// @route   PUT /api/solicitudes-puntos/admin/:id/aprobar
+// @access  Solo administradores (autenticación simple)
+exports.aprobarSolicitudPunto = async (req, res) => {
+    try {
+        const { comentariosAdmin } = req.body;
+        
+        const solicitud = await SolicitudPunto.findById(req.params.id);
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        if (solicitud.estado !== 'pendiente') {
+            return res.status(400).json({
+                success: false,
+                error: 'La solicitud ya fue procesada'
+            });
+        }
+
+        // 1. Actualizar la solicitud
+        solicitud.estado = 'aprobada';
+        solicitud.adminRevisor = req.usuario.nombre; // Nombre del admin del middleware
+        solicitud.comentariosAdmin = comentariosAdmin || 'Solicitud aprobada';
+        solicitud.fechaRevision = new Date();
+        
+        await solicitud.save();
+
+        // 2. Crear el punto de reciclaje
+        // Obtener coordenadas por geocodificación
+        const coordenadas = await geocodificarDireccion(
+            solicitud.direccion.calle,
+            solicitud.direccion.numero,
+            solicitud.direccion.colonia,
+            solicitud.direccion.ciudad,
+            solicitud.direccion.estado,
+            solicitud.direccion.pais
+        );
+        
+        const direccionCompleta = `${solicitud.direccion.calle} ${solicitud.direccion.numero}, ${solicitud.direccion.colonia}, ${solicitud.direccion.ciudad}, ${solicitud.direccion.estado}`;
+        
+        const nuevoPunto = new PuntosReciclaje({
+            nombre: solicitud.nombre,
+            descripcion: solicitud.descripcion,
+            latitud: coordenadas.latitud,
+            longitud: coordenadas.longitud,
+            icono: solicitud.icono || 'assets/iconos/recycle_general.png',
+            tipo_material: solicitud.tipo_material,
+            direccion: direccionCompleta,
+            telefono: solicitud.telefono,
+            horario: solicitud.horario,
+            aceptado: "true"
+        });
+
+        await nuevoPunto.save();
+
+        res.json({
+            success: true,
+            data: {
+                solicitud: solicitud,
+                puntoCreado: nuevoPunto
+            },
+            message: 'Solicitud aprobada y punto creado exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error aprobando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor: ' + error.message
+        });
+    }
+};
+
+// @desc    Rechazar una solicitud de punto de reciclaje
+// @route   PUT /api/solicitudes-puntos/admin/:id/rechazar
+// @access  Solo administradores (autenticación simple)
+exports.rechazarSolicitudPunto = async (req, res) => {
+    try {
+        const { comentariosAdmin } = req.body;
+        
+        if (!comentariosAdmin || comentariosAdmin.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                error: 'Los comentarios son obligatorios al rechazar una solicitud'
+            });
+        }
+
+        const solicitud = await SolicitudPunto.findById(req.params.id);
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        if (solicitud.estado !== 'pendiente') {
+            return res.status(400).json({
+                success: false,
+                error: 'La solicitud ya fue procesada'
+            });
+        }
+
+        solicitud.estado = 'rechazada';
+        solicitud.adminRevisor = req.usuario.nombre; // Nombre del admin del middleware
+        solicitud.comentariosAdmin = comentariosAdmin;
+        solicitud.fechaRevision = new Date();
+        
+        await solicitud.save();
+
+        res.json({
+            success: true,
+            data: solicitud,
+            message: 'Solicitud rechazada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error rechazando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener estadísticas de solicitudes
+// @route   GET /api/solicitudes-puntos/admin/estadisticas
+// @access  Solo administradores (autenticación simple)
+exports.obtenerEstadisticasSolicitudes = async (req, res) => {
+    try {
+        const totalSolicitudes = await SolicitudPunto.countDocuments();
+        const solicitudesPendientes = await SolicitudPunto.countDocuments({ estado: 'pendiente' });
+        const solicitudesAprobadas = await SolicitudPunto.countDocuments({ estado: 'aprobada' });
+        const solicitudesRechazadas = await SolicitudPunto.countDocuments({ estado: 'rechazada' });
+
+        res.json({
+            success: true,
+            data: {
+                total: totalSolicitudes,
+                pendientes: solicitudesPendientes,
+                aprobadas: solicitudesAprobadas,
+                rechazadas: solicitudesRechazadas
+            }
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Obtener una solicitud por ID
+// @route   GET /api/solicitudes-puntos/:id
+// @access  Con autenticación simple
+exports.obtenerSolicitudPorId = async (req, res) => {
+    try {
+        const solicitud = await SolicitudPunto.findById(req.params.id);
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: solicitud
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo solicitud por ID:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Actualizar una solicitud
+// @route   PUT /api/solicitudes-puntos/:id
+// @access  Con autenticación simple
+exports.actualizarSolicitudPunto = async (req, res) => {
+    try {
+        const {
+            nombre,
+            descripcion,
+            direccion,
+            tipo_material,
+            telefono,
+            horario
+        } = req.body;
+
+        const solicitud = await SolicitudPunto.findById(req.params.id);
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        // Solo permitir actualizar si es el propietario o admin
+        if (solicitud.usuarioSolicitante !== req.usuario.nombre && !req.usuario.esAdmin) {
+            return res.status(403).json({
+                success: false,
+                error: 'No tienes permisos para actualizar esta solicitud'
+            });
+        }
+
+        // Actualizar campos permitidos
+        if (nombre !== undefined) solicitud.nombre = nombre;
+        if (descripcion !== undefined) solicitud.descripcion = descripcion;
+        if (direccion !== undefined) solicitud.direccion = direccion;
+        if (tipo_material !== undefined) solicitud.tipo_material = tipo_material;
+        if (telefono !== undefined) solicitud.telefono = telefono;
+        if (horario !== undefined) solicitud.horario = horario;
+
+        await solicitud.save();
+
+        res.json({
+            success: true,
+            data: solicitud,
+            message: 'Solicitud actualizada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error actualizando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Eliminar una solicitud
+// @route   DELETE /api/solicitudes-puntos/:id
+// @access  Con autenticación simple
+exports.eliminarSolicitudPunto = async (req, res) => {
+    try {
+        const solicitud = await SolicitudPunto.findById(req.params.id);
+
+        if (!solicitud) {
+            return res.status(404).json({
+                success: false,
+                error: 'Solicitud no encontrada'
+            });
+        }
+
+        // Solo permitir eliminar si es el propietario o admin
+        if (solicitud.usuarioSolicitante !== req.usuario.nombre && !req.usuario.esAdmin) {
+            return res.status(403).json({
+                success: false,
+                error: 'No tienes permisos para eliminar esta solicitud'
+            });
+        }
+
+        await SolicitudPunto.findByIdAndDelete(req.params.id);
+
+        res.json({
+            success: true,
+            message: 'Solicitud eliminada exitosamente'
+        });
+
+    } catch (error) {
+        console.error('Error eliminando solicitud:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error interno del servidor'
+        });
+    }
+};
+
+// @desc    Geocodificar dirección para vista previa (endpoint público)
+// @route   POST /api/geocodificar-preview
+// @access  Público (sin autenticación)
+exports.geocodificarPreview = async (req, res) => {
+    try {
+        const { calle, numero, colonia, ciudad = 'Tepic', estado = 'Nayarit', pais = 'México' } = req.body;
+
+        // Validar campos mínimos
+        if (!calle || !numero || !colonia) {
+            return res.status(400).json({
+                success: false,
+                error: 'Campos requeridos: calle, numero, colonia'
+            });
+        }
+
+        const ubicacion = await geocodificarDireccion(calle, numero, colonia, ciudad, estado, pais);
+
+        res.json({
+            success: true,
+            data: ubicacion
+        });
+
+    } catch (error) {
+        console.error('Error en geocodificarPreview:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al geocodificar'
+        });
+    }
+};

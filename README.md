@@ -7,4 +7,5 @@ npm install dotenv
 npm install cors
 npm install nodemon
 npm install jsonwebtoken
+npm install axios
 npm install

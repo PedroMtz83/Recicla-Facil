@@ -4,20 +4,8 @@ const controlador=require('../controllers/controlador');
 const upload = require('../config/multer.config');
 
 // =========================================================================
-// RUTA DE CONFIGURACIÓN (para que el cliente obtenga la URL base del servidor)
+// RUTAS DE USUARIOS
 // =========================================================================
-router.get('/config', (req, res) => {
-  const protocol = req.protocol;
-  const host = req.get('host');
-  const baseUrl = `${protocol}://${host}`;
-  
-  res.json({
-    baseUrl: baseUrl,
-    apiUrl: `${baseUrl}/api`,
-    uploadUrl: `${baseUrl}/uploads`
-  });
-});
-
 router.post('/usuarios', controlador.crearUsuario);
 router.get('/usuarios', controlador.obtenerUsuarios);
 router.get('/usuarios/:email', controlador.obtenerUsuarioPorEmail);
@@ -26,6 +14,9 @@ router.put('/usuarios/:email', controlador.actualizarUsuario);
 router.delete('/usuarios/:email', controlador.eliminarUsuario);
 router.post('/usuarios/cambiar-password', controlador.cambiarPassword);
 
+// =========================================================================
+// RUTAS DE QUEJAS
+// =========================================================================
 router.post('/quejas', controlador.crearQueja);
 router.get('/quejas/mis-quejas/:email', controlador.obtenerMisQuejas);
 router.get('/quejas/pendientes', controlador.obtenerQuejasPendientes);
@@ -63,4 +54,76 @@ router.put('/puntos-reciclaje/:id', controlador.actualizarPuntoReciclaje);
 router.put('/puntos-reciclaje/estado/:id', controlador.aceptarPunto);
 router.delete('/puntos-reciclaje/:id', controlador.eliminarPuntoReciclaje);
 
-module.exports=router;
+// =========================================================================
+// RUTAS DE SOLICITUDES DE PUNTOS DE RECICLAJE - AUTENTICACIÓN SIMPLE
+// =========================================================================
+
+// Middleware de autenticación simple
+const authSimple = (req, res, next) => {
+  // Verificar si se proporcionó usuario y contraseña básicos en headers
+  const usuario = req.headers['x-usuario'];
+  const esAdminHeader = req.headers['x-admin'];
+
+  if (!usuario) {
+    return res.status(401).json({
+      success: false,
+      error: 'Acceso denegado. Se requiere identificación de usuario.'
+    });
+  }
+
+  // Adjuntar información del usuario al request
+  req.usuario = {
+    nombre: usuario,
+    esAdmin: esAdminHeader === 'true'
+  };
+
+  next();
+};
+
+// Middleware para verificar si es admin
+const esAdminSimple = (req, res, next) => {
+  if (!req.usuario.esAdmin) {
+    return res.status(403).json({
+      success: false,
+      error: 'Acceso denegado. Se requieren permisos de administrador.'
+    });
+  }
+  next();
+};
+
+// CREAR NUEVA SOLICITUD (usuarios identificados)
+router.post('/solicitudes-puntos', authSimple, controlador.crearSolicitudPunto);
+
+// OBTENER MIS SOLICITUDES (usuario actual)
+router.get('/solicitudes-puntos/mis-solicitudes', authSimple, controlador.obtenerMisSolicitudes);
+
+// OBTENER SOLICITUDES PENDIENTES (solo admin)
+router.get('/solicitudes-puntos/admin/pendientes', authSimple, esAdminSimple, controlador.obtenerSolicitudesPendientes);
+
+// OBTENER TODAS LAS SOLICITUDES (solo admin, con filtros)
+router.get('/solicitudes-puntos/admin/todas', authSimple, esAdminSimple, controlador.obtenerTodasLasSolicitudes);
+
+// APROBAR SOLICITUD (solo admin)
+router.put('/solicitudes-puntos/admin/:id/aprobar', authSimple, esAdminSimple, controlador.aprobarSolicitudPunto);
+
+// RECHAZAR SOLICITUD (solo admin)
+router.put('/solicitudes-puntos/admin/:id/rechazar', authSimple, esAdminSimple, controlador.rechazarSolicitudPunto);
+
+// OBTENER ESTADÍSTICAS DE SOLICITUDES (solo admin)
+router.get('/solicitudes-puntos/admin/estadisticas', authSimple, esAdminSimple, controlador.obtenerEstadisticasSolicitudes);
+
+// OBTENER SOLICITUD POR ID (cualquier usuario identificado)
+router.get('/solicitudes-puntos/:id', authSimple, controlador.obtenerSolicitudPorId);
+
+// ACTUALIZAR SOLICITUD (cualquier usuario identificado)
+router.put('/solicitudes-puntos/:id', authSimple, controlador.actualizarSolicitudPunto);
+
+// ELIMINAR SOLICITUD (cualquier usuario identificado)
+router.delete('/solicitudes-puntos/:id', authSimple, controlador.eliminarSolicitudPunto);
+
+// =========================================================================
+// ENDPOINT DE GEOCODIFICACIÓN PARA PREVIEW (público, sin autenticación)
+// =========================================================================
+router.post('/geocodificar-preview', controlador.geocodificarPreview);
+
+module.exports = router;
