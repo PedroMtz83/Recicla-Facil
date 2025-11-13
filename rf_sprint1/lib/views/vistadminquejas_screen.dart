@@ -276,11 +276,8 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
               );
             }).toList(),
             onChanged: (String? nuevoValor) {
-              // Cuando el admin selecciona una nueva categoría...
               setState(() {
                 _categoriaFiltro = nuevoValor;
-                // ...se vuelve a llamar a la función para cargar los datos,
-                // que ahora usará el filtro seleccionado.
                 _recargarQuejas();
               });
             },

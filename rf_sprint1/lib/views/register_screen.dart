@@ -135,6 +135,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _nombreController,
                           decoration: InputDecoration(
                             labelText: 'Nombre de usuario',
+                            hintText: 'Ingrese un nombre de usuario',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.person),
@@ -164,7 +165,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            labelText: 'Correo Electrónico',
+                            labelText: 'Correo electrónico',
+                            hintText: 'Ingrese un correo electrónico',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.email),
@@ -195,6 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
+                            hintText: 'Ingrese una contraseña combinada de mayúsculas y minúsculas, números y signos',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.lock),
@@ -234,7 +237,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _confirmPasswordController,
                           obscureText: _obscureConfirmPassword,
                           decoration: InputDecoration(
-                            labelText: 'Confirmar Contraseña',
+                            labelText: 'Confirmar contraseña',
+                            hintText: 'Ingrese la contraseña que acaba de escribir',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.lock_outline),
@@ -301,7 +305,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Navigator.pop(context);
                         },
                         child: Text(
-                          '¿Ya tienes cuenta? Inicia sesión',
+                          '¿Ya tienes una cuenta? Inicia sesión',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,

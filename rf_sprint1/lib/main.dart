@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:rf_sprint1/views/admin_puntos_screen.dart';
 import 'package:rf_sprint1/views/contenido_screen.dart';
 
 // Importa tus vistas y providers
 import 'package:rf_sprint1/views/perfilUsuario_screen.dart';
-import 'package:rf_sprint1/views/puntos_screen.dart';
 import 'package:rf_sprint1/views/puntos_tabs_screen.dart';
 import 'package:rf_sprint1/views/quejas_tabs_screen.dart';
 import 'package:rf_sprint1/views/register_screen.dart';
@@ -59,6 +56,9 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
         '/profile': (context) => ProfileScreen(),
+        '/quejas': (context) => QuejasTabsScreen(),
+        '/contenido-educativo': (context) => ContenidoScreen(),
+        '/puntos-reciclaje': (context) => PuntosTabsScreen()
       },
     );
   }
@@ -74,14 +74,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    ProfileScreen(),
-    QuejasTabsScreen(),
-    ContenidoScreen(),
-    PuntosScreen(),
-    AdminPuntosScreen()
-  ];
 
   final List<String> _pageTitles = [
     "Mi perfil",

@@ -197,11 +197,11 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTextFormField(_tituloController, 'Título'),
+                      _buildTextFormField(_tituloController, 'Título','Agregue un título para el contenido'),
                       SizedBox(height: 15),
-                      _buildTextFormField(_descripcionController, 'Descripción corta', maxLines: 3),
+                      _buildTextFormField(_descripcionController, 'Descripción corta','Redacte una descripción acerca del contenido', maxLines: 3),
                       SizedBox(height: 15),
-                      _buildTextFormField(_contenidoController, 'Contenido completo', maxLines: 6),
+                      _buildTextFormField(_contenidoController, 'Contenido completo','Incluya la información referente al registro', maxLines: 6),
                       SizedBox(height: 15),
                       Row(
                         children: [
@@ -212,6 +212,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                                 isExpanded: true,
                                 decoration: InputDecoration(
                                   labelText: 'Categoría',
+                                  hintText: 'Seleccione alguna de las categorías disponibles',
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
@@ -222,7 +223,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                                     value: valor,
                                     child: Text(
                                       valor.replaceAll('-', ' ').toUpperCase(),
-                                      style: const TextStyle(fontSize: 16),
+                                      style: TextStyle(fontSize: 16),
                                     ),
                                   );
                                 }).toList(),
@@ -237,9 +238,10 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                           SizedBox(width: 10),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              isExpanded: true, // ajusta el dropdown al ancho disponible
+                              isExpanded: true,
                               decoration: InputDecoration(
-                                labelText: 'Selecciona el tipo de material',
+                                labelText: 'Tipo de material',
+                                hintText: 'Seleccione alguno de los tipos de material disponibles',
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -264,9 +266,9 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                         ],
                       ),
                       SizedBox(height: 15),
-                      _buildTextFormField(_puntosClaveController, 'Puntos Clave (separados por coma)'),
+                      _buildTextFormField(_puntosClaveController, 'Puntos clave (separados por coma)','Indique los puntos clave del registro'),
                       SizedBox(height: 15),
-                      _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)'),
+                      _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)','Indique las etiquetas referentes al registro'),
                       SizedBox(height: 20),
 
 
@@ -313,12 +315,13 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
   }
 
 
-  Widget _buildTextFormField(TextEditingController controller, String label, {int maxLines = 1, String? validationMsg}) {
+  Widget _buildTextFormField(TextEditingController controller, String label, String hinttext, {int maxLines = 1, String? validationMsg}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       decoration: InputDecoration(
         labelText: label,
+        hintText: hinttext,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         filled: true,
         fillColor: Colors.grey.shade100,

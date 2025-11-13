@@ -116,6 +116,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
                         value: _materialFiltro,
                         decoration: InputDecoration(
                           labelText: 'Filtro de material',
+                          hintText: 'Seleccione uno de los materiales para buscar',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.filter_list),
                           contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),

@@ -129,7 +129,8 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
           DropdownButtonFormField<TipoBusqueda>(
             value: _tipoBusquedaSeleccionada,
             decoration: InputDecoration(
-              labelText: 'Buscar por',
+              labelText: 'Buscar por:',
+              hintText: 'Seleccione alguna de las opciones para hacer la búsqueda',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),
@@ -162,7 +163,8 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
           TextField(
             controller: _busquedaController,
             decoration: InputDecoration(
-              labelText: 'Escribe tu búsqueda aquí...',
+              labelText: 'Escriba un valor.',
+              hintText: 'Ingrese un dato para realizar la búsqueda con base a ello',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8.0),
               ),

@@ -16,7 +16,7 @@ class _QuejasTabsScreenState extends State<QuejasTabsScreen> {
 
   final List<Widget> _pages = [
     FormularioQuejaWidget(),
-    const GestionQuejasScreen(),
+    GestionQuejasScreen(),
   ];
 
   void _onItemTapped(int index) {

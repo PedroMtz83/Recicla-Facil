@@ -99,7 +99,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         onTap: _onItemTapped,
         selectedItemColor: Colors.green[700],
         unselectedItemColor: Colors.grey[600],
-        items: const <BottomNavigationBarItem>[
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.edit_location_alt),
             label: 'Gestionar',
@@ -116,32 +116,32 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   // --- PANTALLA 1: GESTIONAR PUNTOS ---
   Widget _buildGestionarScreen() {
     if (_puntosGestion.isEmpty) {
-      return const Center(child: Text('No hay puntos de reciclaje para gestionar.'));
+      return Center(child: Text('No hay puntos de reciclaje para gestionar.'));
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
       itemCount: _puntosGestion.length,
       itemBuilder: (context, index) {
         final centro = _puntosGestion[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           elevation: 2,
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(centro.nombre, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                Text(centro.nombre, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
                 Text(centro.direccion, style: TextStyle(color: Colors.grey[700])),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      icon: const Icon(Icons.edit, size: 20),
-                      label: const Text('Editar'),
+                      icon: Icon(Icons.edit, size: 20),
+                      label: Text('Editar'),
                       onPressed: () {
                         // TODO: Lógica para editar el centro
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -150,20 +150,20 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.blue[700],
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     TextButton.icon(
-                      icon: const Icon(Icons.delete_outline, size: 20),
-                      label: const Text('Eliminar'),
+                      icon: Icon(Icons.delete_outline, size: 20),
+                      label: Text('Eliminar'),
                       onPressed: () async {
 
                         _eliminarPunto(centro.id);
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red[700],
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                     ),
                   ],
@@ -216,12 +216,12 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
       itemCount: _puntosPorValidar.length,
       itemBuilder: (context, index) {
         final centro = _puntosPorValidar[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           elevation: 3,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -229,17 +229,17 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
           ),
           color: Colors.orange[50], // Tono para destacar que está pendiente
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // --- Título Principal ---
                 Text(centro.nombre,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87)),
-                const Divider(height: 20),
+                Divider(height: 20),
 
                 // --- Fila de Dirección ---
                 _buildInfoRow(
@@ -257,13 +257,13 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                 // --- Fila de Descripción ---
                 _buildInfoRow(
                     Icons.description_outlined, 'Descripción', centro.descripcion),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
 
                 // --- Sección de Materiales Aceptados ---
                 Text('Materiales que acepta:',
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.grey[800])),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Wrap(
                   spacing: 8.0,
                   runSpacing: 4.0,
@@ -273,11 +273,11 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                       backgroundColor: Colors.green[100],
                       side: BorderSide.none,
                       padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // --- Botones de Acción ---
                 Row(
@@ -285,8 +285,8 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.thumb_down_outlined),
-                        label: const Text('Rechazar'),
+                        icon: Icon(Icons.thumb_down_outlined),
+                        label: Text('Rechazar'),
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[600],
@@ -297,8 +297,8 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                     ),
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.thumb_up_outlined),
-                        label: const Text('Aceptar'),
+                        icon: Icon(Icons.thumb_up_outlined),
+                        label: Text('Aceptar'),
                         onPressed: () => _aceptarPunto(centro),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[600],
@@ -321,12 +321,12 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
 // Puedes poner este método dentro de la clase _AdminPuntosScreenState
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: EdgeInsets.only(bottom: 12.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: Colors.grey[600], size: 20),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +334,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                 Text(label,
                     style: TextStyle(
                         fontWeight: FontWeight.bold, color: Colors.grey[800])),
-                const SizedBox(height: 2),
+                SizedBox(height: 2),
                 Text(value, style: TextStyle(color: Colors.black.withOpacity(0.7))),
               ],
             ),

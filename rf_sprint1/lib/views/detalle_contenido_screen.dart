@@ -56,14 +56,14 @@ class DetalleContenidoScreen extends StatelessWidget {
                   // --- Título y Descripción ---
                   Text(
                     contenido.titulo,
-                    style: const TextStyle(fontSize: 26.0, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 26.0, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12.0),
+                  SizedBox(height: 12.0),
                   Text(
                     contenido.descripcion,
                     style: TextStyle(fontSize: 16.0, color: Colors.grey[700], height: 1.5),
                   ),
-                  const SizedBox(height: 24.0),
+                  SizedBox(height: 24.0),
 
                   // --- Chips de Categoría y Tipo de Material ---
                   Wrap(
@@ -74,21 +74,21 @@ class DetalleContenidoScreen extends StatelessWidget {
                       _buildInfoChip(Icons.inventory_2_outlined, contenido.tipoMaterial, Colors.teal),
                     ],
                   ),
-                  const SizedBox(height: 24.0),
-                  const Divider(),
-                  const SizedBox(height: 16.0),
+                  SizedBox(height: 24.0),
+                  Divider(),
+                  SizedBox(height: 16.0),
 
                   // --- Contenido Principal ---
                   Text(
                     "Información Detallada",
-                    style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12.0),
+                  SizedBox(height: 12.0),
                   Text(
                     contenido.contenido,
                     style: TextStyle(fontSize: 16.0, color: Colors.grey[800], height: 1.6),
                   ),
-                  const SizedBox(height: 24.0),
+                  SizedBox(height: 24.0),
 
                   // --- Puntos Clave ---
                   _buildSectionList(
@@ -116,12 +116,12 @@ class DetalleContenidoScreen extends StatelessWidget {
 
                   // --- Galería de Imágenes (si hay más de una) ---
                   if (contenido.imagenes.length > 1) ...[
-                    const SizedBox(height: 24.0),
+                    SizedBox(height: 24.0),
                     Text(
                       "Galería",
-                      style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 12.0),
+                    SizedBox(height: 12.0),
                     SizedBox(
                       height: 150,
                       child: ListView.builder(
@@ -135,7 +135,7 @@ class DetalleContenidoScreen extends StatelessWidget {
                               imageUrl: _getImagenUrl(imagen.ruta) ?? '',
                               width: 200,
                               fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => const Icon(Icons.error),
+                              errorWidget: (context, url, error) => Icon(Icons.error),
                             ),
                           );
                         },
@@ -143,7 +143,7 @@ class DetalleContenidoScreen extends StatelessWidget {
                     ),
                   ],
 
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40),
                 ],
               ),
             ),
@@ -160,18 +160,18 @@ class DetalleContenidoScreen extends StatelessWidget {
     required IconData icon,
     required Color color,
   }) {
-    if (items.isEmpty) return const SizedBox.shrink(); // No muestra nada si la lista está vacía
+    if (items.isEmpty) return SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24.0),
+      padding: EdgeInsets.only(bottom: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 12.0),
+          SizedBox(height: 12.0),
           ...items.map((item) => ListTile(
             leading: Icon(icon, color: color),
             title: Text(item, style: TextStyle(fontSize: 16.0, color: Colors.grey[800])),
@@ -184,14 +184,10 @@ class DetalleContenidoScreen extends StatelessWidget {
   // Widget auxiliar para crear los chips de información
   Widget _buildInfoChip(IconData icon, String label, Color color) {
     final HSLColor hslColor = HSLColor.fromColor(color);
-    // Hacemos el color un 30% más oscuro para el texto. Clamp asegura que el valor se mantenga entre 0.0 y 1.0.
     final Color textColor = hslColor.withLightness((hslColor.lightness - 0.3).clamp(0.0, 1.0)).toColor();
 
-    // 2. Color de fondo (muy claro).
-    // Usamos el color base pero con una opacidad muy baja para crear un tinte suave.
     final Color backgroundColor = color.withOpacity(0.1);
 
-    // 3. Color del borde (un poco más visible que el fondo).
     final Color borderColor = color.withOpacity(0.2);
     return Chip(
       avatar: Icon(icon, color: textColor, size: 20),
@@ -199,7 +195,7 @@ class DetalleContenidoScreen extends StatelessWidget {
       backgroundColor: backgroundColor,
       labelStyle: TextStyle(color: textColor, fontWeight: FontWeight.w500),
       side: BorderSide(color: borderColor),
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
     );
   }
 }

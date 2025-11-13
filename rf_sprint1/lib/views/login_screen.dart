@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import '../services/usuario_service.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,8 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
         final userData = response['usuario'] as Map<String, dynamic>;
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
-        // Llama al método de login del provider, pasándole la información del usuario
-        // que recibiste del backend. Este método pondrá isLoggedIn=true y llamará a notifyListeners().
         authProvider.login(
             userData['email'],
             userData['nombre'],
@@ -122,6 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: _nombreController,
                           decoration: InputDecoration(
                             labelText: 'Nombre de usuario',
+                            hintText: 'Ingrese su nombre de usuario',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.person),
@@ -149,6 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: true,
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
+                            hintText: 'Ingrese su contraseña',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                             prefixIcon: Icon(Icons.lock),

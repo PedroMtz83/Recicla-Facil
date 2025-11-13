@@ -184,12 +184,14 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
               _buildTextFormField(
                 _tituloController,
                 'Título',
+                'Agregue un título para el contenido',
                 validationMsg: 'El título es obligatorio',
               ),
               SizedBox(height: 15),
               _buildTextFormField(
                 _descripcionController,
                 'Descripción corta',
+                'Redacte una descripción acerca del contenido',
                 validationMsg: 'La descripción es obligatoria',
                 maxLines: 3,
               ),
@@ -197,6 +199,7 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
               _buildTextFormField(
                 _contenidoController,
                 'Contenido completo',
+                'Incluya la información referente al registro',
                 validationMsg: 'El contenido es obligatorio',
                 maxLines: 6,
               ),
@@ -210,6 +213,7 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                         isExpanded: true,
                         decoration: InputDecoration(
                           labelText: 'Categoría',
+                          hintText: 'Seleccione alguna de las categorías disponibles',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -237,7 +241,8 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                     child: DropdownButtonFormField<String>(
                       isExpanded: true, // ajusta el dropdown al ancho disponible
                       decoration: InputDecoration(
-                        labelText: 'Selecciona el tipo de material',
+                        labelText: 'Tipo de material',
+                        hintText: 'Seleccione alguno de los tipos de material disponibles',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -262,9 +267,9 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                 ],
               ),
               SizedBox(height: 15),
-              _buildTextFormField(_puntosClaveController, 'Puntos Clave (separados por coma)'),
+              _buildTextFormField(_puntosClaveController, 'Puntos clave (separados por coma)', 'Indique los puntos clave del registro'),
               SizedBox(height: 15),
-              _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)'),
+              _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)','Indique las etiquetas referentes al registro'),
               SizedBox(height: 20),
 
               SizedBox(
@@ -316,7 +321,7 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
 
   Widget _buildTextFormField(
       TextEditingController controller,
-      String label, {
+      String label, String hinttext, {
         String? validationMsg,
         int maxLines = 1,
       }) {
@@ -325,6 +330,7 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
       maxLines: maxLines, // Ahora se usa el parámetro nombrado
       decoration: InputDecoration(
         labelText: label,
+        hintText: hinttext,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         alignLabelWithHint: true,
       ),

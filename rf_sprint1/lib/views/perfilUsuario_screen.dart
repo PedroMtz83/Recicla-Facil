@@ -627,12 +627,12 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                     Container(
                       width: double.infinity,
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       child: Row(
                         children: [
                           Icon(Icons.edit_note, color: Theme.of(context).primaryColor),
-                          const SizedBox(width: 12),
-                          const Text(
+                          SizedBox(width: 12),
+                          Text(
                             'Editar Usuario',
                             style: TextStyle(
                               fontSize: 20,
@@ -645,7 +645,7 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
 
                     // --- FORMULARIO ---
                     Padding(
-                      padding: const EdgeInsets.all(20.0),
+                      padding: EdgeInsets.all(20.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -654,27 +654,28 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                             controller: nombreController,
                             decoration: InputDecoration(
                               labelText: 'Nombre de usuario',
+                              hintText: 'Ingrese un nombre de usuario',
                               prefixIcon: Icon(Icons.person_outline),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           // --- TEXTFIELD DE CONTRASEÑA MEJORADO ---
                           TextFormField(
                             controller: passwordController,
                             obscureText: !_passwordVisible, // Oculta el texto de la contraseña
                             decoration: InputDecoration(
-                              labelText: 'Nueva Contraseña (opcional)',
-                              hintText: 'Dejar en blanco para no cambiar',
+                              labelText: 'Nueva contraseña (opcional)',
+                              hintText: 'Dejar en blanco el campo para no cambiar',
                               prefixIcon: Icon(Icons.lock_outline),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _passwordVisible ? Icons.visibility : Icons.visibility_off,
@@ -688,7 +689,7 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
 
                           // --- SWITCH DENTRO DE UN CARD ---
                           Card(
@@ -723,18 +724,18 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
 
                     // --- BOTONES DE ACCIÓN ---
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                      padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           TextButton(
                             onPressed: () => Navigator.of(dialogContext).pop(),
-                            child: const Text('CANCELAR'),
+                            child: Text('CANCELAR'),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           ElevatedButton.icon(
-                            icon: const Icon(Icons.save_alt_outlined, size: 18),
-                            label: const Text('GUARDAR'),
+                            icon: Icon(Icons.save_alt_outlined, size: 18),
+                            label: Text('GUARDAR'),
                             onPressed: () async {
                               final email = (usuario['email'] as String? ?? '').toLowerCase();
 
@@ -742,12 +743,12 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                                 await showDialog<void>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
-                                    title: const Text('Acción no permitida'),
-                                    content: const Text('No puedes quitar el rango de Admin a tu propio usuario, pruebe desde otra cuenta.'),
+                                    title: Text('Acción no permitida'),
+                                    content: Text('No puedes quitar el rango de Admin a tu propio usuario, pruebe desde otra cuenta.'),
                                     actions: [
                                       TextButton(
                                         onPressed: () => Navigator.of(ctx).pop(),
-                                        child: const Text('Entendido'),
+                                        child: Text('Entendido'),
                                       ),
                                     ],
                                   ),
@@ -819,7 +820,12 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                   Expanded(
                     child: TextField(
                       controller: _emailController,
-                      decoration: InputDecoration(labelText: 'Buscar por Email', border: InputBorder.none, prefixIcon: Icon(Icons.search)),
+                      decoration: InputDecoration(
+                          labelText: 'Buscar por correo',
+                          hintText: 'Ingrese un correo para realizar la búsqueda',
+                          border: InputBorder.none,
+                          prefixIcon: Icon(Icons.search)
+                      ),
                       keyboardType: TextInputType.emailAddress,
                       onSubmitted: (_) => _buscarUsuario(),
                     ),
