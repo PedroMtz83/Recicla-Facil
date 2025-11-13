@@ -16,7 +16,7 @@ dependencies:
   provider: ^6.1.5+1
   intl: ^0.20.2
   image_picker: ^1.2.0
-  file_picker: any
+  file_picker: ^10.3.6
   # Mapa OSM - VERSIÓN COMPATIBLE
   flutter_map: ^5.0.0
   latlong2: ^0.9.0  # Actualizado a la versión que requiere flutter_map 5.0.0
