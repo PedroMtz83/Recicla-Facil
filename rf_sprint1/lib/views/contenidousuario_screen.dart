@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/contenido_educativo.dart';
 import '../services/contenido_edu_service.dart';
+import '../widgets/imagen_red_widget.dart';
 import 'contenidodetalle_screen.dart';
 
 enum TipoBusqueda { porTermino, porCategoria, porTipoMaterial }
@@ -211,16 +212,7 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
 
   Widget _buildContenidoCard(ContenidoEducativo contenido) {
     final String? urlOPath = contenido.imagenPrincipal;
-    String? imagenFinalUrl;
-
-    if (urlOPath != null && urlOPath.isNotEmpty) {
-      if (urlOPath.startsWith('http')) {
-        imagenFinalUrl = urlOPath;
-      } else {
-        imagenFinalUrl = ContenidoEduService.serverBaseUrl + urlOPath;
-      }
-    }
-    debugPrint("URL final para la tarjeta '${contenido.titulo}': $imagenFinalUrl");
+    debugPrint("URL/ruta para la tarjeta '${contenido.titulo}': $urlOPath");
 
     return Card(
       elevation: 4.0,
@@ -230,35 +222,12 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (imagenFinalUrl != null)
-            Image.network(
-              imagenFinalUrl,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child:  Center(child: CircularProgressIndicator()),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint("FALLO AL CARGAR IMAGEN: $imagenFinalUrl - Error: $error");
-                return Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child:  Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
-                );
-              },
-            )
-          else
-            Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: Icon(Icons.photo, color: Colors.grey, size: 50),
-            ),
+          ImagenRedWidget(
+            rutaOUrl: urlOPath,
+            height: 220,
+            fit: BoxFit.contain,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(15.0)),
+          ),
 
           Padding(
             padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),

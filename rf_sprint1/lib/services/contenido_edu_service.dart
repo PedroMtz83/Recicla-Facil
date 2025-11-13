@@ -1,6 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../models/contenido_educativo.dart';
@@ -11,50 +13,63 @@ class ContenidoEduService {
   // ===================================================================
   static const String _direccionIpLocal = '10.47.0.132'; // <- CAMBIA ESTO POR TU IP
 
-  // 2. LÓGICA DE ASIGNACIÓN: Este getter elige la IP correcta según la plataforma.
+
+  // ===================================================================
+  // CONFIGURACIÓN DE SERVIDOR
+  // ===================================================================
+  static const String _androidEmulatorIp = '10.0.2.2';
+
+  // 1. Obtener el _apiRoot según la plataforma
   static String get _apiRoot {
-    // ASIGNACIÓN PARA WEB:
     if (kIsWeb) {
       return 'http://localhost:3000/api';
     }
-
-    // ASIGNACIÓN PARA MÓVIL (Android):
-    try {
-      if (Platform.isAndroid) {
-        // En el emulador de Android, se "asigna" la IP especial del alias.
-        return 'http://10.0.2.2:3000/api';
-      }
-    } catch (e) {
-      // Fallback por si 'Platform' no está disponible.
-      return 'http://localhost:3000/api';
-    }
-
-    // ASIGNACIÓN PARA MÓVIL (iOS o dispositivo físico):
-    // Se "asigna" la IP de desarrollo configurada manualmente.
-    return 'http://$_direccionIpLocal:3000/api';
+    // Para móvil en emulador
+    return 'http://$_androidEmulatorIp:3000/api';
   }
 
+  // 2. serverBaseUrl estático para las vistas que lo necesitan
   static String get serverBaseUrl {
-    // Para web, SIEMPRE usamos la IP local para acceder a recursos.
     if (kIsWeb) {
-      return 'http://$_direccionIpLocal:3000';
+      return 'http://localhost:3000';
+    }
+    // Para móvil, usamos el emulador por defecto
+    return 'http://$_androidEmulatorIp:3000';
+  }
+
+  // 3. Variable para almacenar la URL base del servidor (obtenida dinámicamente)
+  static String? _serverBaseUrlDinamico;
+
+  // 4. Método para obtener la URL base del servidor de forma dinámica
+  static Future<String> obtenerServerBaseUrl() async {
+    // Si ya la hemos cacheado, devolverla
+    if (_serverBaseUrlDinamico != null) {
+      return _serverBaseUrlDinamico!;
     }
 
-    // Para móvil, la lógica puede ser más compleja
     try {
-      if (Platform.isAndroid) {
-        // En emulador, usamos la IP especial. En físico, la IP local.
-        // Una forma simple es asumir que si no es web, es la IP local.
-        // Pero para ser precisos con el emulador:
-        // return 'http://10.0.2.2:3000'; // Solo para emulador
-        return 'http://$_direccionIpLocal:3000'; // Para dispositivo físico
+      final uri = Uri.parse('$_apiRoot/config');
+      debugPrint('[ContenidoEduService] Obteniendo config del servidor desde: $uri');
+      
+      final response = await http.get(uri).timeout(
+        Duration(seconds: 5),
+        onTimeout: () {
+          throw TimeoutException('Timeout al obtener config del servidor');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _serverBaseUrlDinamico = data['baseUrl'];
+        debugPrint('[ContenidoEduService] URL base del servidor obtenida: $_serverBaseUrlDinamico');
+        return _serverBaseUrlDinamico!;
+      } else {
+        throw Exception('Error: ${response.statusCode}');
       }
     } catch (e) {
-      // Fallback
+      debugPrint('[ContenidoEduService] Error obteniendo config: $e. Usando fallback: $serverBaseUrl');
+      return serverBaseUrl;
     }
-
-    // Default para iOS y otros
-    return 'http://$_direccionIpLocal:3000';
   }
 
   // ===================================================================
@@ -68,15 +83,6 @@ class ContenidoEduService {
     int limit = 10,
     int page = 1,
   }) async {
-    final queryParams = {
-      if (categoria != null) 'categoria': categoria,
-      if (tipoMaterial != null) 'tipo_material': tipoMaterial,
-      'publicado': publicado.toString(),
-      if (etiqueta != null) 'etiqueta': etiqueta,
-      'limit': limit.toString(),
-      'page': page.toString(),
-    };
-
     final uri = Uri.parse('$_apiRoot/contenido-educativo/');
     debugPrint('ContenidoEduService - Obteniendo contenido en: $uri');
 
@@ -137,7 +143,7 @@ class ContenidoEduService {
     required String contenido,
     required String categoria,
     required String tipoMaterial,
-    required List<File> imagenes,
+    required List<dynamic> imagenes, // Dinámico para soportar File (móvil) y File web
     required List<String> puntosClave,
     required List<String> accionesCorrectas,
     required List<String> accionesIncorrectas,
@@ -171,11 +177,43 @@ class ContenidoEduService {
     // ===== ARCHIVOS =====
     for (var i = 0; i < imagenes.length; i++) {
       final file = imagenes[i];
-      final multipartFile = await http.MultipartFile.fromPath(
-        'imagenes',   // 👈 este es el nombre del campo que el backend debe reconocer
-        file.path,
-      );
-      request.files.add(multipartFile);
+
+      // En web, usar bytes; en móvil, usar fromPath
+      if (kIsWeb) {
+        // Para web, leer los bytes del archivo
+        final bytes = await file.readAsBytes();
+
+        // Intentar obtener mime type desde los bytes
+        String? mimeType = lookupMimeType('', headerBytes: bytes);
+        // Derivar extensión segura si el nombre no la contiene
+        String filename = '';
+  if (file is XFile) filename = file.name;
+        if (filename.isEmpty) {
+          final ext = (mimeType != null && mimeType.contains('/')) ? mimeType.split('/').last : 'jpg';
+          filename = 'imagen_$i.$ext';
+        }
+
+        MediaType? mediaType;
+        if (mimeType != null && mimeType.contains('/')) {
+          final parts = mimeType.split('/');
+          mediaType = MediaType(parts[0], parts[1]);
+        }
+
+        final multipartFile = http.MultipartFile.fromBytes(
+          'imagenes',
+          bytes,
+          filename: filename,
+          contentType: mediaType,
+        );
+        request.files.add(multipartFile);
+      } else {
+        // Para móvil, usar fromPath
+        final multipartFile = await http.MultipartFile.fromPath(
+          'imagenes',
+          file.path,
+        );
+        request.files.add(multipartFile);
+      }
     }
 
     try {
@@ -234,8 +272,8 @@ class ContenidoEduService {
     List<String>? etiquetas,
     bool? publicado,
     int? imgPrincipal,
-    required List<File> nuevasImagenes, // Nuevas imágenes para subir
-    List<String>? idsImagenesAEliminar, // IDs de imágenes existentes a eliminar
+    required List<dynamic> nuevasImagenes, // Dinámico para soportar File (móvil) y File web
+    List<String>? idsImagenesAEliminar,
   }) async {
     final url = Uri.parse('$_apiRoot/contenido-educativo/$id');
     debugPrint('ContenidoEduService - Actualizando contenido (multipart) en: $url');
@@ -260,14 +298,39 @@ class ContenidoEduService {
     if (idsImagenesAEliminar != null) request.fields['ids_imagenes_a_eliminar'] = jsonEncode(idsImagenesAEliminar);
 
     // ===== NUEVOS ARCHIVOS DE IMAGEN =====
-    if (nuevasImagenes != null) {
-      for (var file in nuevasImagenes) {
+    var idx = 0;
+    for (var file in nuevasImagenes) {
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        String? mimeType = lookupMimeType('', headerBytes: bytes);
+        String filename = '';
+  if (file is XFile) filename = file.name;
+        if (filename.isEmpty) {
+          final ext = (mimeType != null && mimeType.contains('/')) ? mimeType.split('/').last : 'jpg';
+          filename = 'imagen_$idx.$ext';
+        }
+
+        MediaType? mediaType;
+        if (mimeType != null && mimeType.contains('/')) {
+          final parts = mimeType.split('/');
+          mediaType = MediaType(parts[0], parts[1]);
+        }
+
+        final multipartFile = http.MultipartFile.fromBytes(
+          'imagenes',
+          bytes,
+          filename: filename,
+          contentType: mediaType,
+        );
+        request.files.add(multipartFile);
+      } else {
         final multipartFile = await http.MultipartFile.fromPath(
-          'imagenes', // Nombre del campo que el backend espera
+          'imagenes',
           file.path,
         );
         request.files.add(multipartFile);
       }
+      idx++;
     }
 
     try {

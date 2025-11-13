@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/contenido_edu_service.dart';
 import '../models/contenido_educativo.dart';
+import '../widgets/imagen_red_widget.dart';
 
 class ContenidoDetalleScreen extends StatefulWidget {
   final String contenidoId;
@@ -54,38 +55,16 @@ class _ContenidoDetalleScreenState extends State<ContenidoDetalleScreen> {
 
   Widget _buildDetalleView(ContenidoEducativo contenido) {
     final String? urlOPath = contenido.imagenPrincipal;
-    String? imagenFinalUrl;
-
-    if (urlOPath != null && urlOPath.isNotEmpty) {
-      if (urlOPath.startsWith('http')) {
-        imagenFinalUrl = urlOPath;
-      } else {
-        imagenFinalUrl = ContenidoEduService.serverBaseUrl + urlOPath;
-      }
-    }
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (imagenFinalUrl != null)
-            Image.network(
-              imagenFinalUrl,
-              height: 250,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 250,
-                color: Colors.grey[200],
-                child: Icon(Icons.broken_image, size: 60, color: Colors.grey),
-              ),
-            )
-          else
-            Container(
-              height: 250,
-              color: Colors.grey[200],
-              child: Icon(Icons.photo, size: 60, color: Colors.grey),
-            ),
+          ImagenRedWidget(
+            rutaOUrl: urlOPath,
+            height: 280,
+            fit: BoxFit.contain,
+          ),
 
           SizedBox(height: 16),
 
@@ -160,6 +139,62 @@ class _ContenidoDetalleScreenState extends State<ContenidoDetalleScreen> {
                       ],
                     ),
                   )),
+                ],
+              ),
+            ),
+
+          // Galería de imágenes si hay más de una
+          if (contenido.imagenes.length > 0)
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 28),
+                  Text(
+                    "Galería de Imágenes",
+                    style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 14.0),
+                  SizedBox(
+                    height: 140,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: contenido.imagenes.length,
+                      itemBuilder: (context, index) {
+                        final imagen = contenido.imagenes[index];
+                        return Padding(
+                          padding: EdgeInsets.only(right: 12.0),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: GestureDetector(
+                              onTap: () {
+                                // Mostrar imagen en fullscreen si lo deseas
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => Dialog(
+                                    child: InteractiveViewer(
+                                      child: ImagenRedWidget(
+                                        rutaOUrl: imagen.ruta,
+                                        height: 500,
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: ImagenRedWidget(
+                                rutaOUrl: imagen.ruta,
+                                height: 140,
+                                width: 140,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),

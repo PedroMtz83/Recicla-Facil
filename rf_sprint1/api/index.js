@@ -11,7 +11,9 @@ conectarDB();
 
 app.use(express.json());
 app.use(cors());
+// Servir assets estáticos y las imágenes subidas por multer
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/', (req, res) => {
   res.send('¡Servidor Node.js funcionando correctamente!');
 });

@@ -1,9 +1,13 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
+
 
 // Asegúrate de que las rutas de importación sean correctas para tu proyecto
 import '../models/contenido_educativo.dart';
+import '../widgets/imagen_red_widget.dart';
 import '../services/contenido_edu_service.dart';
 
 class GestionarContenidoScreen extends StatefulWidget {
@@ -125,7 +129,17 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     materialSelect=contenidoAEditar.tipoMaterial;
 
 
-    List<File> _nuevasImagenes = [];
+  List<XFile> _nuevasImagenes = [];
+    // Rutas de imágenes actuales marcadas para eliminar
+    Set<String> _imagenesAEliminar = {};
+    // Índice (en la lista de imágenes actuales) de la imagen marcada como principal
+    int? _imagenPrincipalExistente;
+    // Inicializar índice principal si existe
+    if (contenidoAEditar.imagenes.isNotEmpty) {
+      final idx = contenidoAEditar.imagenes.indexWhere((img) => img.esPrincipal == true);
+      _imagenPrincipalExistente = idx >= 0 ? idx : null;
+    }
+
     bool _estaGuardando = false;
 
     showDialog(
@@ -135,10 +149,26 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             Future<void> _seleccionarImagenesDialog() async {
-              final List<XFile> imagenes = await _picker.pickMultiImage();
-              if (imagenes.isNotEmpty) {
+              // En web: usar file_picker para permitir multiple y obtener bytes
+              if (kIsWeb) {
+                final result = await FilePicker.platform.pickFiles(
+                  allowMultiple: true,
+                  type: FileType.image,
+                  withData: true,
+                );
+                if (result != null && result.files.isNotEmpty) {
+                  setStateDialog(() {
+                    _nuevasImagenes = result.files.where((f) => f.bytes != null).map((f) => XFile.fromData(f.bytes!, name: f.name)).toList();
+                  });
+                }
+                return;
+              }
+
+              // En móvil/desktop: usar image_picker
+              final List<XFile>? imagenes = await _picker.pickMultiImage(imageQuality: 80);
+              if (imagenes != null && imagenes.isNotEmpty) {
                 setStateDialog(() {
-                  _nuevasImagenes = imagenes.map((xfile) => File(xfile.path)).toList();
+                  _nuevasImagenes = imagenes;
                 });
               }
             }
@@ -168,6 +198,8 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                   puntosClave: puntosClaveList,
                   etiquetas: etiquetasList,
                   nuevasImagenes: _nuevasImagenes,
+                  idsImagenesAEliminar: _imagenesAEliminar.isNotEmpty ? _imagenesAEliminar.toList() : null,
+                  imgPrincipal: _imagenPrincipalExistente,
                 );
 
                 if (response['statusCode'] == 200) {
@@ -228,7 +260,8 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                                   );
                                 }).toList(),
                                 onChanged: (String? nuevoValor) {
-                                  setState(() {
+                                  // Usar setStateDialog en lugar de setState para evitar reconstruir el árbol padre
+                                  setStateDialog(() {
                                     catSelect = nuevoValor!;
                                   });
                                 },
@@ -257,7 +290,8 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                                 );
                               }).toList(),
                               onChanged: (String? nuevoValor) {
-                                setState(() {
+                                // Usar setStateDialog en lugar de setState para evitar reconstruir el árbol padre
+                                setStateDialog(() {
                                   materialSelect = nuevoValor!;
                                 });
                               },
@@ -278,7 +312,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                       if (_nuevasImagenes.isNotEmpty)
                         _buildVistaPreviaImagenesLocales(_nuevasImagenes)
                       else
-                        _buildVistaPreviaImagenesActuales(contenidoAEditar.imagenes),
+                        Text("${contenidoAEditar.imagenes.length} imágenes actuales", style: TextStyle(color: Colors.grey, fontSize: 12)),
 
                       SizedBox(height: 10),
                       OutlinedButton.icon(
@@ -335,18 +369,30 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     );
   }
 
-  Widget _buildVistaPreviaImagenesLocales(List<File> imagenes) {
+  Widget _buildVistaPreviaImagenesLocales(List<XFile> imagenes) {
     return Container(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: imagenes.length,
         itemBuilder: (context, index) {
+          final imagenFile = imagenes[index];
           return Padding(
             padding: EdgeInsets.only(right: 8.0),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.file(imagenes[index], width: 100, height: 100, fit: BoxFit.cover),
+              child: FutureBuilder<List<int>>(
+                future: imagenFile.readAsBytes(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container(width: 100, height: 100, color: Colors.grey[200]);
+                  }
+                  if (snapshot.hasError || !snapshot.hasData) {
+                    return Container(width: 100, height: 100, color: Colors.grey[300], child: Icon(Icons.broken_image));
+                  }
+                  return Image.memory(Uint8List.fromList(snapshot.data!), width: 100, height: 100, fit: BoxFit.cover);
+                },
+              ),
             ),
           );
         },
@@ -354,57 +400,26 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     );
   }
 
-  Widget _buildVistaPreviaImagenesActuales(List<ImagenContenido> imagenes) {
-    if (imagenes.isEmpty) {
-      return Text("No hay imágenes actuales.", style: TextStyle(color: Colors.grey));
-    }
-    return Container(
-      height: 100,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: imagenes.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.only(right: 8.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: _buildImagenWidget(imagenes[index].ruta, height: 100),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-
-  Widget _buildImagenWidget(dynamic imagenData, {double height = 160}) {
-    if (imagenData is File) {
-      return Image.file(
-        imagenData,
+  Widget _buildImagenWidget(dynamic imagenData, {double height = 160, BoxFit fit = BoxFit.cover}) {
+    // Soporta: - String (ruta/URL remota) - XFile (archivo local seleccionado en web/móvil)
+    if (imagenData is String && imagenData.isNotEmpty) {
+      return ImagenRedWidget(
+        rutaOUrl: imagenData,
         height: height,
-        width: double.infinity,
-        fit: BoxFit.cover,
+        fit: fit,
       );
-    } else if (imagenData is String && imagenData.isNotEmpty) {
-      String urlCompleta;
-      if (imagenData.startsWith('http')) {
-        urlCompleta = imagenData;
-      } else {
-        // Asegúrate de que ContenidoEduService.serverBaseUrl esté correctamente definido
-        urlCompleta = '${ContenidoEduService.serverBaseUrl}$imagenData';
-      }
-
-      return Image.network(
-        urlCompleta,
-        height: height,
-        width: double.infinity, // Ajustado para que quepa en el ClipRRect
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) => progress == null ? child : Center(child: CircularProgressIndicator()),
-        errorBuilder: (context, error, stack) => Container(
-          height: height,
-          color: Colors.grey[200],
-          child: Icon(Icons.image_not_supported, color: Colors.grey, size: 50),
-        ),
+    } else if (imagenData is XFile) {
+      return FutureBuilder<List<int>>(
+        future: imagenData.readAsBytes(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Container(height: height, color: Colors.grey[200]);
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Container(height: height, color: Colors.grey[300], child: Icon(Icons.broken_image));
+          }
+          return Image.memory(Uint8List.fromList(snapshot.data!), height: height, width: double.infinity, fit: fit);
+        },
       );
     }
     return Container(height: height, color: Colors.grey[200], child: Icon(Icons.photo, color: Colors.grey, size: 50));
@@ -449,7 +464,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                       SizedBox(height: 10),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: _buildImagenWidget(contenido.imagenPrincipal),
+                        child: _buildImagenWidget(contenido.imagenPrincipal, height: 180, fit: BoxFit.contain),
                       ),
                       SizedBox(height: 10),
                       Container(

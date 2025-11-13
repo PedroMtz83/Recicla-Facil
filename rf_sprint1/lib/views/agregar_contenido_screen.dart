@@ -1,7 +1,8 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:typed_data';
 import '../services/contenido_edu_service.dart';
 
 class AgregarContenidoScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
   final _tipoMaterialController = TextEditingController();
   final _puntosClaveController = TextEditingController();
   final _etiquetasController = TextEditingController();
-  final List<File> _imagenesSeleccionadas = [];
+  final List<XFile> _imagenesSeleccionadas = [];
   final ImagePicker _picker = ImagePicker();
   final List<String> _categoria = [
     'tipos-materiales',
@@ -62,9 +63,20 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
   /// Simula la subida de una imagen a un servicio de almacenamiento
   /// y devuelve una URL de ejemplo.
   /// En una app real, aquí llamarías a Firebase Storage, Cloudinary, etc.
-  Future<String> _subirImagen(File imagen) async {
+  Future<String> _subirImagen(dynamic imagen) async {
+    // Simula subida; acepta XFile u otros objetos de archivo
     await Future.delayed( Duration(seconds: 1));
-    debugPrint('Subiendo imagen: ${imagen.path}');
+    try {
+      String pathOrName = '';
+      if (imagen is XFile) {
+        pathOrName = imagen.name;
+      } else if (imagen != null) {
+        pathOrName = imagen.path ?? '';
+      }
+      debugPrint('Subiendo imagen: $pathOrName');
+    } catch (_) {
+      debugPrint('Subiendo imagen (unknown)');
+    }
     return 'https://via.placeholder.com/600x400.png/00A97F/FFFFFF?Text=ReciclaFacil';
   }
 
@@ -153,11 +165,30 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
     });
   }
 
+  // Recomendado: usar file_picker en web para selección múltiple, image_picker en móvil
+  Future<List<XFile>> _seleccionarMultiplesImagenes() async {
+    // Web: usar file_picker para asegurar que el input permita multiple
+    if (kIsWeb) {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.image,
+        withData: true,
+      );
+      if (result == null) return <XFile>[];
+      final archivos = result.files.where((f) => f.bytes != null).map((f) => XFile.fromData(f.bytes!, name: f.name)).toList();
+      return archivos;
+    }
+
+    // Móvil / escritorio: usar image_picker
+    final List<XFile>? seleccion = await _picker.pickMultiImage(imageQuality: 80);
+    return seleccion ?? <XFile>[];
+  }
+
   Future<void> _seleccionarImagenes() async {
-    final List<XFile> seleccionadas = await _picker.pickMultiImage(imageQuality: 80);
-    if (seleccionadas.isNotEmpty) {
+    final imagenes = await _seleccionarMultiplesImagenes();
+    if (imagenes.isNotEmpty) {
       setState(() {
-        _imagenesSeleccionadas.addAll(seleccionadas.map((img) => File(img.path)));
+        _imagenesSeleccionadas.addAll(imagenes);
         if (_imagenPrincipalIndex == null && _imagenesSeleccionadas.isNotEmpty) {
           _imagenPrincipalIndex = 0;
         }
@@ -371,18 +402,23 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(isPrincipal ? 5 : 8),
-                          child: kIsWeb
-                              ? Image.network(
-                            imagenFile.path,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
-                          )
-                              : Image.file(
-                            imagenFile,
-                            width: 120,
-                            height: 120,
-                            fit: BoxFit.cover,
+                          // Usar Image.memory para mostrar preview en todas las plataformas
+                          child: FutureBuilder<List<int>>(
+                            future: imagenFile.readAsBytes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return Container(width: 120, height: 120, color: Colors.grey[200]);
+                              }
+                              if (snapshot.hasError || !snapshot.hasData) {
+                                return Container(width: 120, height: 120, color: Colors.grey[300], child: Icon(Icons.broken_image));
+                              }
+                              return Image.memory(
+                                Uint8List.fromList(snapshot.data!),
+                                width: 120,
+                                height: 120,
+                                fit: BoxFit.cover,
+                              );
+                            },
                           ),
                         ),
                       ),

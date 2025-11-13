@@ -3,6 +3,21 @@ const router=express.Router();
 const controlador=require('../controllers/controlador');
 const upload = require('../config/multer.config');
 
+// =========================================================================
+// RUTA DE CONFIGURACIÓN (para que el cliente obtenga la URL base del servidor)
+// =========================================================================
+router.get('/config', (req, res) => {
+  const protocol = req.protocol;
+  const host = req.get('host');
+  const baseUrl = `${protocol}://${host}`;
+  
+  res.json({
+    baseUrl: baseUrl,
+    apiUrl: `${baseUrl}/api`,
+    uploadUrl: `${baseUrl}/uploads`
+  });
+});
+
 router.post('/usuarios', controlador.crearUsuario);
 router.get('/usuarios', controlador.obtenerUsuarios);
 router.get('/usuarios/:email', controlador.obtenerUsuarioPorEmail);

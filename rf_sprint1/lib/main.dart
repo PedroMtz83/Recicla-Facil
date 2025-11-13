@@ -84,10 +84,18 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
+    // First close the drawer synchronously, then update the state after the frame
+    // to avoid changing the widget tree while pointer events are being processed
+    // (this can trigger mouse-tracker assertions on web).
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _currentIndex = index;
+      });
     });
-    Navigator.pop(context);
   }
 
   Widget _buildCurrentPage() {
