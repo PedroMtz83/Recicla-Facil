@@ -2,7 +2,11 @@
 
 import 'package:flutter/material.dart';
 import '../models/punto_reciclaje.dart';
+import '../models/solicitud_punto.dart';
 import '../services/puntos_reciclaje_service.dart';
+import '../services/solicitudes_puntos_service.dart';
+import '../auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class AdminPuntosScreen extends StatefulWidget {
   const AdminPuntosScreen({super.key});
@@ -15,7 +19,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   int _selectedIndex = 0;
 
    List<PuntoReciclaje> _puntosGestion=[];
-   List<PuntoReciclaje> _puntosPorValidar=[];
+   List<SolicitudPunto> _solicitudesPorValidar=[];
   bool _isLoading = true;
 
   @override
@@ -25,28 +29,28 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   }
 
   Future<void> _cargarDatos() async {
-
     try {
+      final authProvider = context.read<AuthProvider>();
+      final userName = authProvider.userName ?? '';
+      final isAdmin = authProvider.isAdmin;
+
       final resultadosDinamicos = await Future.wait([
         PuntosReciclajeService.obtenerPuntosReciclajeEstado("true"),
-        PuntosReciclajeService.obtenerPuntosReciclajeEstado("false"),
+        SolicitudesPuntosService().obtenerSolicitudesPendientes(
+          userName: userName,
+          isAdmin: isAdmin,
+        ),
       ]);
 
       final List<PuntoReciclaje> listaAceptados = (resultadosDinamicos[0] as List)
           .map((data) => PuntoReciclaje.fromJson(data as Map<String, dynamic>))
           .toList();
-
-      final List<PuntoReciclaje> listaNoAceptados = (resultadosDinamicos[1] as List)
-          .map((data) => PuntoReciclaje.fromJson(data as Map<String, dynamic>))
-          .toList();
-
-      final puntosFiltradosGestion = listaAceptados;
-      final puntosFiltradosPorValidar = listaNoAceptados;
+      final List<SolicitudPunto> listaSolicitudes = resultadosDinamicos[1] as List<SolicitudPunto>;
 
       if (mounted) {
         setState(() {
-          _puntosGestion = puntosFiltradosGestion;
-          _puntosPorValidar = puntosFiltradosPorValidar;
+          _puntosGestion = listaAceptados;
+          _solicitudesPorValidar = listaSolicitudes;
           _isLoading = false;
         });
       }
@@ -82,7 +86,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _selectedIndex == 0 ? 'Gestionar Puntos' : 'Validar Puntos',
+          _selectedIndex == 0 ? 'Gestionar Puntos' : 'Validar Solicitudes',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -204,22 +208,48 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     }
   }
 
-// --- PANTALLA 2: VALIDAR PUNTOS (VERSIÓN MEJORADA) ---
+  Future<void> _aprobarSolicitud(SolicitudPunto solicitud) async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final userName = authProvider.userName ?? '';
+      final isAdmin = authProvider.isAdmin;
+
+      final resultado = await SolicitudesPuntosService().aprobarSolicitud(
+        solicitud.id,
+        comentariosAdmin: 'Solicitud aprobada por el administrador',
+        userName: userName,
+        isAdmin: isAdmin,
+      );
+
+      if (mounted) {
+        if (resultado) {
+          _mostrarSnackBar('✓ Solicitud aprobada correctamente. El punto aparecerá en el mapa.');
+          _cargarDatos();
+        } else {
+          _mostrarSnackBar('Error al aprobar la solicitud.', esError: true);
+        }
+      }
+    } catch (e) {
+      if (mounted) _mostrarSnackBar(e.toString(), esError: true);
+    }
+  }
+
+// --- PANTALLA 2: VALIDAR SOLICITUDES DE PUNTOS ---
   Widget _buildValidarScreen() {
-    if (_puntosPorValidar.isEmpty) {
+    if (_solicitudesPorValidar.isEmpty) {
       return const Center(
           child: Padding(
             padding: EdgeInsets.all(16.0),
-            child: Text('¡Excelente! No hay puntos nuevos pendientes de validación.',
+            child: Text('¡Excelente! No hay solicitudes de puntos pendientes de validación.',
                 textAlign: TextAlign.center),
           ));
     }
 
     return ListView.builder(
       padding: const EdgeInsets.all(8.0),
-      itemCount: _puntosPorValidar.length,
+      itemCount: _solicitudesPorValidar.length,
       itemBuilder: (context, index) {
-        final centro = _puntosPorValidar[index];
+        final solicitud = _solicitudesPorValidar[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           elevation: 3,
@@ -227,67 +257,95 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(color: Colors.orange.shade200, width: 1),
           ),
-          color: Colors.orange[50], // Tono para destacar que está pendiente
+          color: Colors.orange[50],
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- Título Principal ---
-                Text(centro.nombre,
-                    style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87)),
+                // --- Encabezado con usuario solicitante ---
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(solicitud.nombre,
+                              style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87)),
+                          const SizedBox(height: 4),
+                          Text('Solicitado por: ${solicitud.usuarioSolicitante}',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                  fontStyle: FontStyle.italic)),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[100],
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Pendiente',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange[800],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const Divider(height: 20),
 
                 // --- Fila de Dirección ---
                 _buildInfoRow(
-                    Icons.location_on_outlined, 'Dirección', centro.direccion),
-
-                // --- Fila de Horario ---
-                _buildInfoRow(
-                    Icons.access_time_outlined, 'Horario', centro.horario),
-
-                // --- Fila de Teléfono ---
-                if (centro.telefono.isNotEmpty && centro.telefono != 'N/A')
-                  _buildInfoRow(
-                      Icons.phone_outlined, 'Teléfono', centro.telefono),
+                    Icons.location_on_outlined, 
+                    'Dirección', 
+                    '${solicitud.direccion.calle} ${solicitud.direccion.numero}, ${solicitud.direccion.colonia}'),
 
                 // --- Fila de Descripción ---
                 _buildInfoRow(
-                    Icons.description_outlined, 'Descripción', centro.descripcion),
-                const SizedBox(height: 12),
+                    Icons.description_outlined, 'Descripción', solicitud.descripcion),
+                
+                // --- Fila de Tipos de Material ---
+                if (solicitud.tipoMaterial.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text('Materiales que acepta:',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.grey[800])),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: solicitud.tipoMaterial.map((material) {
+                      return Chip(
+                        label: Text(material),
+                        backgroundColor: Colors.green[100],
+                        side: BorderSide.none,
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      );
+                    }).toList(),
+                  ),
+                ],
 
-                // --- Sección de Materiales Aceptados ---
-                Text('Materiales que acepta:',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.grey[800])),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 4.0,
-                  children: centro.tipoMaterial.map((material) {
-                    return Chip(
-                      label: Text(material),
-                      backgroundColor: Colors.green[100],
-                      side: BorderSide.none,
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    );
-                  }).toList(),
-                ),
                 const SizedBox(height: 20),
 
                 // --- Botones de Acción ---
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.thumb_down_outlined),
+                        icon: const Icon(Icons.close),
                         label: const Text('Rechazar'),
-                        onPressed: () {},
+                        onPressed: () => _mostrarDialogoRechazo(solicitud),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[600],
                           foregroundColor: Colors.white,
@@ -295,11 +353,12 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.thumb_up_outlined),
+                        icon: const Icon(Icons.check),
                         label: const Text('Aceptar'),
-                        onPressed: () => _aceptarPunto(centro),
+                        onPressed: () => _aprobarSolicitud(solicitud),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green[600],
                           foregroundColor: Colors.white,
@@ -355,13 +414,11 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child:  Text('No'),
           ),
-          // Botón rojo para confirmar la eliminación
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             icon:  Icon(Icons.warning),
             label:  Text('Sí, Eliminar'),
             onPressed: () async {
-              // Bloquea múltiples clics
               if (_isLoading) return;
               setState(() => _isLoading = true);
               Navigator.of(ctx).pop();
@@ -384,5 +441,85 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         ],
       ),
     );
+  }
+
+  void _mostrarDialogoRechazo(SolicitudPunto solicitud) {
+    final TextEditingController motivoController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Rechazar Solicitud'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Punto: ${solicitud.nombre}',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 16),
+            Text('Motivo del rechazo:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            TextField(
+              controller: motivoController,
+              decoration: InputDecoration(
+                hintText: 'Ingresa el motivo del rechazo...',
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            icon: Icon(Icons.close),
+            label: Text('Rechazar'),
+            onPressed: () async {
+              if (motivoController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(
+                      content: Text('Debes ingresar un motivo del rechazo')),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              await _ejecutarRechazo(solicitud, motivoController.text.trim());
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _ejecutarRechazo(SolicitudPunto solicitud, String motivo) async {
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final userName = authProvider.userName ?? '';
+      final isAdmin = authProvider.isAdmin;
+
+      final resultado = await SolicitudesPuntosService().rechazarSolicitud(
+        solicitud.id,
+        motivo,
+        userName: userName,
+        isAdmin: isAdmin,
+      );
+
+      if (mounted) {
+        if (resultado) {
+          _mostrarSnackBar('✗ Solicitud rechazada. El usuario recibirá una notificación.');
+          _cargarDatos();
+        } else {
+          _mostrarSnackBar('Error al rechazar la solicitud.', esError: true);
+        }
+      }
+    } catch (e) {
+      if (mounted) _mostrarSnackBar(e.toString(), esError: true);
+    }
   }
 }

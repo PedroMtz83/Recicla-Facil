@@ -89,7 +89,7 @@ const contenidoEducativoSchema = new mongoose.Schema({
     },
     tipo_material: {
         type: String,
-        enum: ['plastico', 'vidrio', 'papel', 'metal', 'organico', 'electronico', 'general'],
+        enum: ['Todos', 'Aluminio', 'Cartón', 'Papel', 'PET', 'Vidrio'],
         required: [true, 'El tipo de material es obligatorio']
     },
     imagenes: [{
@@ -241,15 +241,13 @@ const solicitudPuntoSchema = new mongoose.Schema({
             trim: true
         }
     },
-    // Coordenadas obtenidas por geocodificación
+    // Coordenadas obtenidas por geocodificación (opcionales al crear, se generan automáticamente)
     ubicacion: {
         latitud: {
-            type: Number,
-            required: [true, "La latitud es obligatoria"]
+            type: Number
         },
         longitud: {
-            type: Number,
-            required: [true, "La longitud es obligatoria"]
+            type: Number
         }
     },
     icono: {
@@ -279,8 +277,7 @@ const solicitudPuntoSchema = new mongoose.Schema({
     },
     // Usuario que creó la solicitud
     usuarioSolicitante: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'coleccion_usuarios',
+        type: String,
         required: true
     },
     // Estado de la solicitud
@@ -291,8 +288,7 @@ const solicitudPuntoSchema = new mongoose.Schema({
     },
     // Admin que revisó la solicitud
     adminRevisor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'coleccion_usuarios'
+        type: String
     },
     // Comentarios del admin al aprobar/rechazar
     comentariosAdmin: {

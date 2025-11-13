@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/punto_reciclaje.dart';
 import '../services/puntos_reciclaje_service.dart';
+import 'solicitudes_puntos_screen.dart'; // Importar la pantalla de solicitudes
 
 class PuntosScreen extends StatefulWidget {
   const PuntosScreen({super.key});
@@ -46,7 +47,6 @@ class _PuntosScreenState extends State<PuntosScreen> {
         .map((mapaCentro) => PuntoReciclaje.fromJson(mapaCentro as Map<String, dynamic>))
         .toList();
 
-    // 5. Actualiza el estado con la LISTA DE OBJETOS ya parseada
     if (mounted) {
       setState(() {
         _puntosEncontrados = puntos;
@@ -82,6 +82,37 @@ class _PuntosScreenState extends State<PuntosScreen> {
     }
   }
 
+  // NUEVO: Método para navegar a la pantalla de nueva solicitud
+  void _navegarANuevaSolicitud() async {
+    final resultado = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => NuevaSolicitudPuntoScreen(),
+      ),
+    );
+    
+    // Recargar puntos si se aprobó una solicitud
+    if (resultado == true) {
+      _cargarCentrosIniciales();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('¡Solicitud enviada exitosamente!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  // NUEVO: Método para navegar a mis solicitudes
+  void _navegarAMisSolicitudes() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SolicitudesPuntosScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,6 +120,12 @@ class _PuntosScreenState extends State<PuntosScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         actions: [
+          // NUEVO: Botón para ver mis solicitudes
+          IconButton(
+            icon: Icon(Icons.list_alt, color: Colors.green),
+            onPressed: _navegarAMisSolicitudes,
+            tooltip: 'Mis solicitudes',
+          ),
           IconButton(
             icon: Icon(_mostrarMapa ? Icons.list : Icons.map),
             onPressed: () => setState(() => _mostrarMapa = !_mostrarMapa),
@@ -108,7 +145,43 @@ class _PuntosScreenState extends State<PuntosScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 24),
+                SizedBox(height: 8),
+                // NUEVO: Información sobre solicitudes
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[100]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.green[700]),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '¿No encuentras un punto? ¡Solicita agregarlo!',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _navegarANuevaSolicitud,
+                        child: Text(
+                          'Solicitar',
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
@@ -167,10 +240,71 @@ class _PuntosScreenState extends State<PuntosScreen> {
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())
                 : _puntosEncontrados.isEmpty
-                    ? Center(child: Text('No se encontraron centros'))
+                    ? _buildEmptyState()
                     : _mostrarMapa ? _construirMapa() : _construirLista(),
           ),
         ],
+      ),
+      // NUEVO: Floating Action Button para crear solicitud rápida
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navegarANuevaSolicitud,
+        child: Icon(Icons.add_location_alt),
+        backgroundColor: Colors.green,
+        tooltip: 'Solicitar nuevo punto de reciclaje',
+      ),
+    );
+  }
+
+  // NUEVO: Estado vacío mejorado con opción para crear solicitud
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.location_off,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No se encontraron puntos de reciclaje',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Puedes solicitar agregar un nuevo punto de reciclaje en tu zona',
+              style: TextStyle(
+                color: Colors.grey[500],
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _navegarANuevaSolicitud,
+              icon: Icon(Icons.add_location_alt),
+              label: Text('Solicitar Nuevo Punto'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            SizedBox(height: 16),
+            TextButton(
+              onPressed: _navegarAMisSolicitudes,
+              child: Text('Ver mis solicitudes anteriores'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -244,6 +378,18 @@ class _PuntosScreenState extends State<PuntosScreen> {
               mini: true,
             ),
           ),
+        // NUEVO: Botón para solicitar punto en el mapa
+        Positioned(
+          bottom: 20,
+          left: 20,
+          child: FloatingActionButton(
+            onPressed: _navegarANuevaSolicitud,
+            child: Icon(Icons.add_location_alt),
+            backgroundColor: Colors.green,
+            mini: true,
+            tooltip: 'Solicitar punto aquí',
+          ),
+        ),
       ],
     );
   }
@@ -291,6 +437,19 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 }).toList(),
               ),
               SizedBox(height: 20),
+              // NUEVO: Botón para sugerir mejoras/solicitar puntos similares
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: _navegarANuevaSolicitud,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.green,
+                    side: BorderSide(color: Colors.green),
+                  ),
+                  child: Text('Sugerir punto similar'),
+                ),
+              ),
+              SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -338,7 +497,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
           PuntoReciclaje.fromJson(mapaCentro as Map<String, dynamic>))
           .toList();
 
-      debugPrint('--- Widget: Parseo a objetos PuntoReciclaje exitoso. Puntos creados: ${puntos.length}'); // <-- Añade esto
+      debugPrint('--- Widget: Parseo a objetos PuntoReciclaje exitoso. Puntos creados: ${puntos.length}');
 
       if (mounted) {
         setState(() {
@@ -349,7 +508,6 @@ class _PuntosScreenState extends State<PuntosScreen> {
       debugPrint('--- Widget: ¡ERROR CAPTURADO! ---');
       debugPrint('Error: $e');
       debugPrint('Stack Trace: $stackTrace');
-      // -----------------------------------------
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al procesar los puntos: $e')),
