@@ -109,18 +109,39 @@ class _PuntosScreenState extends State<PuntosScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        elevation: 1,
         actions: [
-          // NUEVO: Botón para ver mis solicitudes
-          IconButton(
-            icon: Icon(Icons.list_alt, color: Colors.green),
-            onPressed: _navegarAMisSolicitudes,
-            tooltip: 'Mis solicitudes',
+          // Botón para ver mis solicitudes
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.green[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: Icon(Icons.list_alt, color: Colors.green[700], size: 24),
+              onPressed: _navegarAMisSolicitudes,
+              tooltip: 'Mis solicitudes',
+            ),
           ),
-          IconButton(
-            icon: Icon(_mostrarMapa ? Icons.list : Icons.map),
-            onPressed: () => setState(() => _mostrarMapa = !_mostrarMapa),
-            tooltip: _mostrarMapa ? 'Ver lista' : 'Ver mapa',
+          // Botón para cambiar entre mapa y lista
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.green[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              icon: Icon(
+                _mostrarMapa ? Icons.list : Icons.location_on,
+                color: Colors.green[700],
+                size: 24,
+              ),
+              onPressed: () => setState(() => _mostrarMapa = !_mostrarMapa),
+              tooltip: _mostrarMapa ? 'Ver lista' : 'Ver mapa',
+            ),
           ),
+          SizedBox(width: 8),
         ],
       ),
       body: Column(
