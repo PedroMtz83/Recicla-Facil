@@ -93,28 +93,32 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         ),
         backgroundColor: Colors.white,
         elevation: 1,
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.location_on,
+              color: _selectedIndex == 0 ? Colors.green[700] : Colors.grey[500],
+              size: 28,
+            ),
+            onPressed: () => _onItemTapped(0),
+            tooltip: 'Gestionar',
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.assignment_turned_in,
+              color: _selectedIndex == 1 ? Colors.green[700] : Colors.grey[500],
+              size: 28,
+            ),
+            onPressed: () => _onItemTapped(1),
+            tooltip: 'Validar',
+          ),
+        ],
       ),
       body: _isLoading ? Center (
         child: CircularProgressIndicator(),
       ): IndexedStack(
         index: _selectedIndex,
         children: _buildScreens(),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: Colors.green[700],
-        unselectedItemColor: Colors.grey[600],
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.edit_location_alt),
-            label: 'Gestionar',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.rule_folder_outlined),
-            label: 'Validar',
-          ),
-        ],
       ),
     );
   }
