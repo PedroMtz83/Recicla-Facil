@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import '../models/punto_reciclaje.dart';
+import '../puntos_provider.dart';
 import '../services/puntos_reciclaje_service.dart';
 import 'solicitudes_puntos_screen.dart'; // Importar la pantalla de solicitudes
 
@@ -14,9 +16,7 @@ class PuntosScreen extends StatefulWidget {
 }
 
 class _PuntosScreenState extends State<PuntosScreen> {
-  bool _isLoading = false;
   String? _materialFiltro;
-  List<PuntoReciclaje> _puntosEncontrados = [];
   bool _mostrarMapa = false;
   LatLng? _currentLocation;
   MapController _mapController = MapController();
@@ -30,35 +30,19 @@ class _PuntosScreenState extends State<PuntosScreen> {
     'Vidrio',
   ];
 
+
   static const LatLng _centroTepic = LatLng(21.5018, -104.8946);
 
   @override
   void initState() {
     super.initState();
     _materialFiltro = 'Todos';
-    _cargarCentrosIniciales();
     _getCurrentLocation();
-  }
-
-  void _cargarCentrosIniciales() async{
-    try{
-    final List<dynamic> datosCrudos = await PuntosReciclajeService.obtenerPuntosReciclajePorMaterial(_materialFiltro!);
-    final List<PuntoReciclaje> puntos = datosCrudos
-        .map((mapaCentro) => PuntoReciclaje.fromJson(mapaCentro as Map<String, dynamic>))
-        .toList();
-
-    if (mounted) {
-      setState(() {
-        _puntosEncontrados = puntos;
-      });
-    }
-  } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al procesar los puntos: $e')),
-        );
-      }
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Leemos el provider SIN escuchar cambios para llamar a un método.
+      Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
+    });
+    _getCurrentLocation();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -68,7 +52,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission != LocationPermission.whileInUse && 
+      if (permission != LocationPermission.whileInUse &&
           permission != LocationPermission.always) return;
     }
 
@@ -90,10 +74,12 @@ class _PuntosScreenState extends State<PuntosScreen> {
         builder: (context) => NuevaSolicitudPuntoScreen(),
       ),
     );
-    
+
     // Recargar puntos si se aprobó una solicitud
     if (resultado == true) {
-      _cargarCentrosIniciales();
+      Provider.of<PuntosProvider>(context, listen: false)
+          .cargarPuntos(
+          material: _materialFiltro!); // Recarga con el filtro actual
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('¡Solicitud enviada exitosamente!'),
@@ -115,6 +101,10 @@ class _PuntosScreenState extends State<PuntosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final puntosProvider = context.watch<PuntosProvider>();
+    final bool _isLoading = puntosProvider.isLoading;
+    final List<PuntoReciclaje> _puntosEncontrados = puntosProvider.puntos;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -157,7 +147,8 @@ class _PuntosScreenState extends State<PuntosScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.green[700]),
+                      Icon(Icons.info_outline, size: 16,
+                          color: Colors.green[700]),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -186,13 +177,15 @@ class _PuntosScreenState extends State<PuntosScreen> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
+                        isExpanded: true,
                         value: _materialFiltro,
                         decoration: InputDecoration(
                           labelText: 'Filtro de material',
                           hintText: 'Seleccione uno de los materiales para buscar',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.filter_list),
-                          contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 12),
                         ),
                         items: _tiposMaterial.map((material) {
                           return DropdownMenuItem<String>(
@@ -211,14 +204,15 @@ class _PuntosScreenState extends State<PuntosScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        padding: EdgeInsets.symmetric(
+                            vertical: 16, horizontal: 20),
                       ),
                       child: _isLoading
                           ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                           : Text('Buscar'),
                     ),
                   ],
@@ -241,8 +235,8 @@ class _PuntosScreenState extends State<PuntosScreen> {
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())
                 : _puntosEncontrados.isEmpty
-                    ? _buildEmptyState()
-                    : _mostrarMapa ? _construirMapa() : _construirLista(),
+                ? _buildEmptyState()
+                : _mostrarMapa ? _construirMapa(_puntosEncontrados) : _construirLista(_puntosEncontrados),
           ),
         ],
       ),
@@ -261,65 +255,68 @@ class _PuntosScreenState extends State<PuntosScreen> {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.location_off,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No se encontraron puntos de reciclaje',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.location_off,
+                size: 80,
+                color: Colors.grey[400],
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Puedes solicitar agregar un nuevo punto de reciclaje en tu zona',
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 14,
+              SizedBox(height: 16),
+              Text(
+                'No se encontraron puntos de reciclaje',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _navegarANuevaSolicitud,
-              icon: Icon(Icons.add_location_alt),
-              label: Text('Solicitar Nuevo Punto'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              SizedBox(height: 8),
+              Text(
+                'Puedes solicitar agregar un nuevo punto de reciclaje en tu zona',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            SizedBox(height: 16),
-            TextButton(
-              onPressed: _navegarAMisSolicitudes,
-              child: Text('Ver mis solicitudes anteriores'),
-            ),
-          ],
+              SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _navegarANuevaSolicitud,
+                icon: Icon(Icons.add_location_alt),
+                label: Text('Solicitar Nuevo Punto'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              ),
+              SizedBox(height: 16),
+              TextButton(
+                onPressed: _navegarAMisSolicitudes,
+                child: Text('Ver mis solicitudes anteriores'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _construirLista() {
+  Widget _construirLista(List <PuntoReciclaje> puntos) {
     return ListView.builder(
-      itemCount: _puntosEncontrados.length,
+      itemCount: puntos.length,
       itemBuilder: (context, index) {
-        final centro = _puntosEncontrados[index];
+        final centro = puntos[index];
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           child: ListTile(
             leading: Icon(Icons.recycling, color: Colors.green),
-            title: Text(centro.nombre, style: TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+                centro.nombre, style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: Text(centro.direccion),
             trailing: Icon(Icons.chevron_right, color: Colors.green),
             onTap: () => _mostrarDetallesCentro(centro),
@@ -329,7 +326,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
     );
   }
 
-  Widget _construirMapa() {
+  Widget _construirMapa(List <PuntoReciclaje> puntos) {
     return Stack(
       children: [
         FlutterMap(
@@ -348,21 +345,25 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 markers: [
                   Marker(
                     point: _currentLocation!,
-                    builder: (ctx) => Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
+                    builder: (ctx) =>
+                        Icon(Icons.person_pin_circle, color: Colors.blue,
+                            size: 40),
                   ),
                 ],
               ),
             MarkerLayer(
-              markers: _puntosEncontrados.map((centro) {
+              markers: puntos.map((centro) {
                 return Marker(
                   point: centro.coordenadas,
-                  builder: (ctx) => GestureDetector(
-                    onTap: () => _mostrarDetallesCentro(centro),
-                    child: Tooltip(
-                      message: centro.nombre,
-                      child: Icon(Icons.recycling, color: Colors.green, size: 30),
-                    ),
-                  ),
+                  builder: (ctx) =>
+                      GestureDetector(
+                        onTap: () => _mostrarDetallesCentro(centro),
+                        child: Tooltip(
+                          message: centro.nombre,
+                          child: Icon(Icons.recycling, color: Colors.green,
+                              size: 30),
+                        ),
+                      ),
                 );
               }).toList(),
             ),
@@ -401,65 +402,74 @@ class _PuntosScreenState extends State<PuntosScreen> {
       builder: (context) {
         return Container(
           padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.recycling, color: Colors.green, size: 30),
-                  SizedBox(width: 12),
-                  Expanded(child: Text(centro.nombre, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-                ],
-              ),
-              SizedBox(height: 16),
-              Text(centro.descripcion, style: TextStyle(color: Colors.grey[600])),
-              SizedBox(height: 16),
-              _buildInfoRow(Icons.location_on, centro.direccion),
-              _buildInfoRow(Icons.phone, centro.telefono),
-              _buildInfoRow(Icons.access_time, centro.horario),
-              SizedBox(height: 16),
-              Text('Materiales aceptados:', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 4.0,
-                children: centro.tipoMaterial.map((material) {
-                  return Chip(
-                    label: Text(
-                      material,
-                      style: TextStyle(color: Colors.green[800]),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.recycling, color: Colors.green, size: 30),
+                    SizedBox(width: 12),
+                    Expanded(child: Text(centro.nombre, style: TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold))),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Text(centro.descripcion,
+                    style: TextStyle(color: Colors.grey[600])),
+                SizedBox(height: 16),
+                _buildInfoRow(Icons.location_on, centro.direccion),
+                _buildInfoRow(Icons.phone, centro.telefono),
+                _buildInfoRow(Icons.access_time, centro.horario),
+                SizedBox(height: 16),
+                Text('Materiales aceptados:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                SizedBox(height: 8),
+            
+                Wrap(
+                  spacing: 8.0,
+                  runSpacing: 4.0,
+                  children: centro.tipoMaterial.map((material) {
+                    return Chip(
+                      label: Text(
+                        material,
+                        style: TextStyle(color: Colors.green[800]),
+                      ),
+                      backgroundColor: Colors.green[100],
+                      side: BorderSide(color: Colors.green.shade200),
+                      padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    );
+                  }).toList(),
+                ),
+                SizedBox(height: 20),
+                // NUEVO: Botón para sugerir mejoras/solicitar puntos similares
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _navegarANuevaSolicitud,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.green,
+                      side: BorderSide(color: Colors.green),
                     ),
-                    backgroundColor: Colors.green[100],
-                    side: BorderSide(color: Colors.green.shade200),
-                    padding: EdgeInsets.symmetric(horizontal: 8.0),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: 20),
-              // NUEVO: Botón para sugerir mejoras/solicitar puntos similares
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: _navegarANuevaSolicitud,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.green,
-                    side: BorderSide(color: Colors.green),
+                    child: Text('Sugerir punto similar'),
                   ),
-                  child: Text('Sugerir punto similar'),
                 ),
-              ),
-              SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: Text('Cerrar', style: TextStyle(color: Colors.white)),
+                SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green),
+                    child: Text('Cerrar', style: TextStyle(color: Colors.white)),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -480,45 +490,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
   }
 
   void _buscarPuntos() async {
-    setState(() => _isLoading = true);
-    debugPrint('--- Widget: Iniciando _buscarPuntos ---');
-
-    try {
-      final List<dynamic> datosRecibidosDelServicio =
-      await PuntosReciclajeService.obtenerPuntosReciclajePorMaterial(
-          _materialFiltro!);
-
-      debugPrint('--- Widget: ¿Los datos llegaron a la función? ${datosRecibidosDelServicio != null ? 'SÍ' : 'NO'}');
-      if (datosRecibidosDelServicio != null) {
-        debugPrint('--- Widget: Elementos recibidos en la función: ${datosRecibidosDelServicio.length}');
-      }
-
-      final List<PuntoReciclaje> puntos = datosRecibidosDelServicio
-          .map((mapaCentro) =>
-          PuntoReciclaje.fromJson(mapaCentro as Map<String, dynamic>))
-          .toList();
-
-      debugPrint('--- Widget: Parseo a objetos PuntoReciclaje exitoso. Puntos creados: ${puntos.length}');
-
-      if (mounted) {
-        setState(() {
-          _puntosEncontrados = puntos;
-        });
-      }
-    } catch (e, stackTrace) {
-      debugPrint('--- Widget: ¡ERROR CAPTURADO! ---');
-      debugPrint('Error: $e');
-      debugPrint('Stack Trace: $stackTrace');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al procesar los puntos: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-      debugPrint('--- Widget: Fin de _buscarPuntos ---');
-    }
+    Provider.of<PuntosProvider>(context, listen: false)
+        .cargarPuntos(material: _materialFiltro!);
   }
 }

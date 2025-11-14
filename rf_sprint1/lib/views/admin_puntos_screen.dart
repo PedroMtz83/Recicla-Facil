@@ -8,6 +8,8 @@ import '../services/solicitudes_puntos_service.dart';
 import '../auth_provider.dart';
 import 'package:provider/provider.dart';
 
+import 'dialog_editar_punto_screen.dart';
+
 class AdminPuntosScreen extends StatefulWidget {
   const AdminPuntosScreen({super.key});
 
@@ -148,9 +150,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                       label: const Text('Editar'),
                       onPressed: () {
                         // TODO: Lógica para editar el centro
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Editar: ${centro.nombre}')),
-                        );
+                        _editarPunto(context, centro);
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.blue[700],
@@ -162,7 +162,6 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                       icon: const Icon(Icons.delete_outline, size: 20),
                       label: const Text('Eliminar'),
                       onPressed: () async {
-
                         _eliminarPunto(centro.id);
                       },
                       style: TextButton.styleFrom(
@@ -188,6 +187,36 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         content: Text(mensaje),
         backgroundColor: esError ? Colors.red : Colors.green,
       ),
+    );
+  }
+  void _editarPunto(BuildContext context, PuntoReciclaje punto) {
+    // `punto` es el objeto que queremos editar (centro en tu código original)
+    showDialog(
+      context: context,
+      // `barrierDismissible: false` evita que el diálogo se cierre al tocar fuera
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        // Usamos un widget separado para el formulario para mantener el código limpio.
+        return DialogoEditarPunto(
+          punto: punto,
+          // Pasamos una función 'callback' que se ejecutará cuando la actualización sea exitosa.
+          onPuntoActualizado: () {
+            setState(() {
+              // Vuelve a cargar los datos desde la API para refrescar la lista
+              // con la información más reciente.
+              _cargarDatos();
+            });
+
+            // Muestra un mensaje de éxito.
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Punto de reciclaje actualizado con éxito.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

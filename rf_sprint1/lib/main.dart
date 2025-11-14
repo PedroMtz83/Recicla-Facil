@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:rf_sprint1/puntos_provider.dart';
 import 'package:rf_sprint1/views/contenido_screen.dart';
 
 // Importa tus vistas y providers
@@ -17,7 +18,7 @@ void main() {
         // La instancia de AuthProvider se crea aquí, fuera del MaterialApp.
         // Ahora es persistente y no se reiniciará con las reconstrucciones de la UI.
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-
+        ChangeNotifierProvider(create: (_) => PuntosProvider()),
         // Si en el futuro necesitas otro provider, lo añadirías aquí:
         // ChangeNotifierProvider(create: (_) => QuejaProvider()),
       ],

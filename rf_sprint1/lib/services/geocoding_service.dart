@@ -1,5 +1,7 @@
 // lib/services/geocoding_service.dart
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class UbicacionPreview {
@@ -27,8 +29,33 @@ class UbicacionPreview {
 }
 
 class GeocodingService {
-  final String _baseUrl = 'http://localhost:3000/api';
+  // ===================================================================
+  // DETECTAR IP AUTOMÁTICAMENTE
+  // ===================================================================
+  static const String _direccionIpLocal = '192.168.137.115'; // <- CAMBIA ESTO POR TU IP
 
+  // 2. LÓGICA DE ASIGNACIÓN: Este getter elige la IP correcta según la plataforma.
+  static String get _apiRoot {
+    // ASIGNACIÓN PARA WEB:
+    if (kIsWeb) {
+      return 'http://localhost:3000/api';
+    }
+
+    // ASIGNACIÓN PARA MÓVIL (Android):
+    try {
+      if (Platform.isAndroid) {
+        // En el emulador de Android, se "asigna" la IP especial del alias.
+        return 'http://10.0.2.2:3000/api';
+      }
+    } catch (e) {
+      // Fallback por si 'Platform' no está disponible.
+      return 'http://localhost:3000/api';
+    }
+
+    // ASIGNACIÓN PARA MÓVIL (iOS o dispositivo físico):
+    // Se "asigna" la IP de desarrollo configurada manualmente.
+    return 'http://$_direccionIpLocal:3000/api';
+  }
   /// Obtiene las coordenadas de una dirección para vista previa
   /// No requiere autenticación (endpoint público)
   Future<UbicacionPreview> obtenerUbicacionPreview({
@@ -41,7 +68,7 @@ class GeocodingService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$_baseUrl/geocodificar-preview'),
+        Uri.parse('$_apiRoot/geocodificar-preview'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'calle': calle.trim(),
