@@ -6,9 +6,9 @@ import 'dart:typed_data';
 
 
 // Asegúrate de que las rutas de importación sean correctas para tu proyecto
-import '../models/contenido_educativo.dart';
-import '../widgets/imagen_red_widget.dart';
-import '../services/contenido_edu_service.dart';
+import '../../models/contenido_educativo.dart';
+import '../../widgets/imagen_red_widget.dart';
+import '../../services/contenido_edu_service.dart';
 
 class GestionarContenidoScreen extends StatefulWidget {
   const GestionarContenidoScreen({super.key});
@@ -45,7 +45,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     'vidrio'
   ];
   String catSelect='tipos-materiales';
-  String materialSelect='plastico';
+  String materialSelect='pet';
   @override
   void initState() {
     super.initState();
@@ -173,15 +173,6 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
             }
             Future<void> _guardarCambios() async {
               setStateDialog(() { _estaGuardando = true; });
-
-              // TODO: Implementar la lógica de subida de imágenes
-              // Si hay nuevas imágenes en `_nuevasImagenes`, deberías subirlas a tu servidor aquí
-              // y obtener las nuevas URLs. Por ahora, este paso se omite.
-              // List<Map<String, dynamic>>? imagenesParaActualizar = null;
-              // if(_nuevasImagenes.isNotEmpty) {
-              //   // 1. Subir cada imagen y recolectar URLs
-              //   // 2. Formatear como `[{'url': '...', 'es_principal': true}, ...]`
-              // }
 
               final puntosClaveList = _puntosClaveController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
               final etiquetasList = _etiquetasController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -318,6 +309,11 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                         onPressed: _seleccionarImagenesDialog,
                         icon: Icon(Icons.add_photo_alternate_outlined),
                         label: Text('Cambiar Imágenes'),
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.green,
+                          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                        ),
                       ),
                     ],
                   ),
@@ -327,6 +323,9 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                 TextButton(
                   onPressed: _estaGuardando ? null : () => Navigator.of(dialogContext).pop(),
                   child: Text("Cancelar"),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.black,
+                  ),
                 ),
                 ElevatedButton.icon(
                   onPressed: _estaGuardando ? null : _guardarCambios,
@@ -336,6 +335,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                   label: Text(_estaGuardando ? "Guardando..." : "Guardar"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
+                    foregroundColor: Colors.black,
                     disabledBackgroundColor: Colors.green.shade200,
                   ),
                 ),

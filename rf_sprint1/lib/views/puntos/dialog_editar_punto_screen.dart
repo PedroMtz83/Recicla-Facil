@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../models/punto_reciclaje.dart';
-import '../services/puntos_reciclaje_service.dart';
-import '../services/solicitudes_puntos_service.dart';
+import '../../models/punto_reciclaje.dart';
+import '../../services/puntos_reciclaje_service.dart';
+import '../../services/solicitudes_puntos_service.dart';
 // Widget para el diálogo de edición. Es un StatefulWidget para manejar los controladores.
 class DialogoEditarPunto extends StatefulWidget {
   final PuntoReciclaje punto;

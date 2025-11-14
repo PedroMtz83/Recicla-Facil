@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../auth_provider.dart';
-import '../models/queja.dart';
-import '../services/queja_service.dart';
+import '../../models/queja.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/queja_service.dart';
 class VistaUsuarioQuejas extends StatefulWidget {
    const VistaUsuarioQuejas({super.key});
 

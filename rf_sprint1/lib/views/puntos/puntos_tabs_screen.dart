@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rf_sprint1/views/admin_puntos_screen.dart';
-import 'package:rf_sprint1/views/puntos_screen.dart';
-import 'package:rf_sprint1/views/solicitudes_puntos_screen.dart';
-import '../auth_provider.dart';
+import 'package:rf_sprint1/views/puntos/admin_puntos_screen.dart';
+import 'package:rf_sprint1/views/puntos/puntos_screen.dart';
+import 'package:rf_sprint1/views/puntos/solicitudes_puntos_screen.dart';
+import '../../providers/auth_provider.dart';
 
 class PuntosTabsScreen extends StatefulWidget {
   const PuntosTabsScreen({super.key});

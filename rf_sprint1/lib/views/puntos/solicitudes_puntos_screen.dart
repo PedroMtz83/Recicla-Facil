@@ -3,11 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:rf_sprint1/services/solicitudes_puntos_service.dart';
 import 'package:rf_sprint1/services/geocoding_service.dart';
 import 'package:rf_sprint1/models/solicitud_punto.dart';
-import 'package:rf_sprint1/auth_provider.dart';
 import 'package:rf_sprint1/widgets/mapa_ubicacion_widget.dart';
-
-import '../admin_solicitudes_provider.dart';
-import '../solicitudes_provider.dart';
+import '../../providers/admin_solicitudes_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/solicitudes_provider.dart';
 
 class SolicitudesPuntosScreen extends StatefulWidget {
   const SolicitudesPuntosScreen({super.key});

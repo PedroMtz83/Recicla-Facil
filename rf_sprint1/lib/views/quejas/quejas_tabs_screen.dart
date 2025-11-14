@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../auth_provider.dart';
-import '../widgets/formulario_queja_widget.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/formulario_queja_widget.dart';
 import 'gestionquejas_screen.dart';
 
 class QuejasTabsScreen extends StatefulWidget {

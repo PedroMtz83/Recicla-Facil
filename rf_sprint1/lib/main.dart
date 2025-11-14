@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rf_sprint1/puntos_provider.dart';
-import 'package:rf_sprint1/solicitudes_provider.dart';
-import 'package:rf_sprint1/views/contenido_screen.dart';
+import 'package:rf_sprint1/providers/auth_provider.dart';
+import 'package:rf_sprint1/providers/puntos_provider.dart';
+import 'package:rf_sprint1/providers/solicitudes_provider.dart';
+import 'package:rf_sprint1/views/contenido/contenido_screen.dart';
 
 // Importa tus vistas y providers
-import 'package:rf_sprint1/views/perfilUsuario_screen.dart';
-import 'package:rf_sprint1/views/puntos_tabs_screen.dart';
-import 'package:rf_sprint1/views/quejas_tabs_screen.dart';
+import 'package:rf_sprint1/views/perfil/perfilUsuario_screen.dart';
+import 'package:rf_sprint1/views/puntos/puntos_tabs_screen.dart';
+import 'package:rf_sprint1/views/quejas/quejas_tabs_screen.dart';
 import 'package:rf_sprint1/views/register_screen.dart';
 import 'package:rf_sprint1/views/login_screen.dart';
-import 'admin_solicitudes_provider.dart';
-import 'auth_provider.dart';
+import 'providers/admin_solicitudes_provider.dart';
 
 void main() {
   runApp(
@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<String> _pageTitles = [
-    "Mi perfil",
+    "Usuario",
     "Quejas y sugerencias",
     'Contenido educativo',
     'Puntos de reciclaje',
@@ -151,7 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: Icon(Icons.person),
-              title: Text('Perfil'),
+              title: Text('Usuario'),
               selected: _currentIndex == 0,
               selectedTileColor: Colors.green.withOpacity(0.1), // Color de fondo cuando está seleccionado.
               onTap: () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../models/contenido_educativo.dart'; // Ajusta esta ruta si es necesario
+import '../../models/contenido_educativo.dart';
 
 class DetalleContenidoScreen extends StatelessWidget {
   final ContenidoEducativo contenido;

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:typed_data';
-import '../services/contenido_edu_service.dart';
+import '../../services/contenido_edu_service.dart';
 
 class AgregarContenidoScreen extends StatefulWidget {
   const AgregarContenidoScreen({super.key});
@@ -335,7 +335,7 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                   )
                       : Icon(Icons.add_task),
-                  label: Text(_estaCargando ? 'Guardando...' : 'Guardar Contenido'),
+                  label: Text(_estaCargando ? 'Guardando...' : 'Guardar contenido'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,

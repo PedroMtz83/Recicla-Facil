@@ -1,8 +1,8 @@
 // En un nuevo archivo: screens/vista_admin_quejas.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../services/queja_service.dart';
-import '../models/queja.dart';
+import '../../services/queja_service.dart';
+import '../../models/queja.dart';
 class VistaAdminQuejas extends StatefulWidget {
    VistaAdminQuejas({super.key});
 
@@ -213,12 +213,15 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child:  Text('No'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.black
+            ),
           ),
           // Botón rojo para confirmar la eliminación
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             icon:  Icon(Icons.warning),
-            label:  Text('Sí, Eliminar'),
+            label:  Text('Sí, eliminar'),
             onPressed: () async {
               // Bloquea múltiples clics
               if (_isActionLoading) return;

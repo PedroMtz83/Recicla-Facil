@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../services/contenido_edu_service.dart';
-import '../models/contenido_educativo.dart';
-import '../widgets/imagen_red_widget.dart';
+
+import '../../models/contenido_educativo.dart';
+import '../../services/contenido_edu_service.dart';
+import '../../widgets/imagen_red_widget.dart';
+
 
 class ContenidoDetalleScreen extends StatefulWidget {
   final String contenidoId;

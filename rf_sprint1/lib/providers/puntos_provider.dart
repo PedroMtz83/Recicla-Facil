@@ -1,8 +1,8 @@
 // providers/puntos_provider.dart
 
 import 'package:flutter/material.dart';
-import '../models/punto_reciclaje.dart';
-import '../services/puntos_reciclaje_service.dart';
+import '../../models/punto_reciclaje.dart';
+import '../../services/puntos_reciclaje_service.dart';
 
 class PuntosProvider with ChangeNotifier {
   List<PuntoReciclaje> _puntos = [];

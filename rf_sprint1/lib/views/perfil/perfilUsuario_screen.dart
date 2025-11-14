@@ -1,10 +1,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../auth_provider.dart';
-import '../services/perfil_service.dart';
-import '../services/usuario_service.dart';
-import 'login_screen.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/perfil_service.dart';
+import '../../services/usuario_service.dart';
+import '../login_screen.dart';
 
 
 class ProfileScreen extends StatefulWidget {
@@ -257,57 +257,74 @@ class _VistaPerfilState extends State<VistaPerfil> {
   }
 
   void _showChangePasswordDialog(BuildContext context) {
-    final formKey = GlobalKey<FormState>();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: Text('Cambiar Contraseña'),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: newPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: 'Contraseña Nueva', border: OutlineInputBorder()),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'Campo requerido';
-                    if (val.length < 6) return 'Debe tener al menos 6 caracteres';
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
-                TextFormField(
-                  controller: confirmPasswordController,
-                  obscureText: true,
-                  decoration: InputDecoration(labelText: 'Confirmar Contraseña Nueva', border: OutlineInputBorder()),
-                  validator: (val) {
-                    if (val == null || val.isEmpty) return 'Campo requerido';
-                    if (val != newPasswordController.text) return 'Las contraseñas no coinciden';
-                    return null;
-                  },
-                ),
-              ],
+          title: Text('Cambiar contraseña'),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextFormField(
+                    controller: newPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                        labelText: 'Contraseña nueva: ',
+                        border: OutlineInputBorder(),
+                        hintText: 'Escriba una contraseña nueva: '
+                    ),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) return 'Campo requerido';
+                      if (val.length < 6) return 'Debe tener al menos 6 caracteres';
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: confirmPasswordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Confirmar contraseña nueva: ',
+                      border: OutlineInputBorder(),
+                      hintText: 'Vuelva a escribir la contraseña nueva: '
+                    ),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) return 'Campo requerido';
+                      if (val != newPasswordController.text) return 'Las contraseñas no coinciden';
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text('Cancelar'),
+              style: ElevatedButton.styleFrom(
+               foregroundColor: Colors.black,
+              ),
             ),
             ElevatedButton(
               onPressed: () async {
-                if (formKey.currentState!.validate()) {
                   if (widget.userEmail != null) {
                     _changePassword(context, newPasswordController.text);
                   }
-                }
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.black,
+                disabledBackgroundColor: Colors.green.shade200,
+              ),
               child: Text('Guardar'),
             ),
           ],
@@ -562,11 +579,21 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Confirmar Eliminación'),
+        title: Text('Confirmar eliminación'),
         content: Text('¿Estás seguro de que quieres eliminar al usuario con email $email?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('Eliminar', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text('Cancelar'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.black,
+              ),
+          ),
+          FilledButton.icon(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              icon:  Icon(Icons.warning),
+              label:  Text('Sí, eliminar'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+             ),
         ],
       ),
     );
@@ -633,7 +660,7 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                           Icon(Icons.edit_note, color: Theme.of(context).primaryColor),
                           SizedBox(width: 12),
                           Text(
-                            'Editar Usuario',
+                            'Editar usuario',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -730,12 +757,14 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                         children: [
                           TextButton(
                             onPressed: () => Navigator.of(dialogContext).pop(),
-                            child: Text('CANCELAR'),
+                            child: Text('Cancelar'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.black,
+                            ),
                           ),
                           SizedBox(width: 8),
                           ElevatedButton.icon(
-                            icon: Icon(Icons.save_alt_outlined, size: 18),
-                            label: Text('GUARDAR'),
+                            label: Text('Editar'),
                             onPressed: () async {
                               final email = (usuario['email'] as String? ?? '').toLowerCase();
 
@@ -779,11 +808,9 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.black,
+                                disabledBackgroundColor: Colors.green.shade200,
                             ),
                           ),
                         ],

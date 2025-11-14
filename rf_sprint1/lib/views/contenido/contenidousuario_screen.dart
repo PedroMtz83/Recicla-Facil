@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/contenido_educativo.dart';
-import '../services/contenido_edu_service.dart';
-import '../widgets/imagen_red_widget.dart';
+import '../../models/contenido_educativo.dart';
+import '../../services/contenido_edu_service.dart';
+import '../../widgets/imagen_red_widget.dart';
 import 'contenidodetalle_screen.dart';
 
 enum TipoBusqueda { porTermino, porCategoria, porTipoMaterial }

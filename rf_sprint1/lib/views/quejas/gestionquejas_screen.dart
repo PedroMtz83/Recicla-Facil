@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rf_sprint1/auth_provider.dart';
-import 'package:rf_sprint1/views/vistadminquejas_screen.dart';
-import 'package:rf_sprint1/views/vistausuarioquejas_screen.dart';
+import 'package:rf_sprint1/views/quejas/vistadminquejas_screen.dart';
+import 'package:rf_sprint1/views/quejas/vistausuarioquejas_screen.dart';
+import '../../providers/auth_provider.dart';
 
 class GestionQuejasScreen extends StatelessWidget {
    const GestionQuejasScreen({super.key});

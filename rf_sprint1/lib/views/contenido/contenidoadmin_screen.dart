@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rf_sprint1/views/contenidousuario_screen.dart';
+import 'package:rf_sprint1/views/contenido/contenidousuario_screen.dart';
 import 'agregar_contenido_screen.dart';
 import 'gestionar_contenido_screen.dart';
 

@@ -1,12 +1,12 @@
 // lib/views/admin_puntos_screen.dart
 
 import 'package:flutter/material.dart';
-import '../admin_solicitudes_provider.dart';
-import '../models/punto_reciclaje.dart';
-import '../models/solicitud_punto.dart';
-import '../puntos_provider.dart';
-import '../services/solicitudes_puntos_service.dart';
-import '../auth_provider.dart';
+import '../../providers/admin_solicitudes_provider.dart';
+import '../../models/punto_reciclaje.dart';
+import '../../models/solicitud_punto.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/puntos_provider.dart';
+import '../../services/solicitudes_puntos_service.dart';
 import 'package:provider/provider.dart';
 import 'dialog_editar_punto_screen.dart';
 
