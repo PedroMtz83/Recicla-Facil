@@ -117,4 +117,9 @@ router.delete('/solicitudes-puntos/:id', authSimple, controlador.eliminarSolicit
 // =========================================================================
 router.post('/geocodificar-preview', controlador.geocodificarPreview);
 
+// =========================================================================
+// ENDPOINT DE GEOCODIFICACIÓN INVERSA (obtener dirección desde coordenadas)
+// =========================================================================
+router.post('/reverse-geocode', controlador.reverseGeocode);
+
 module.exports = router;

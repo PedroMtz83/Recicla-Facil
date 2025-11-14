@@ -26,6 +26,35 @@ class UbicacionPreview {
   }
 }
 
+class DireccionDesdeCoordenas {
+  final String? calle;
+  final String? numero;
+  final String? colonia;
+  final String? ciudad;
+  final String? estado;
+  final String direccion;
+
+  DireccionDesdeCoordenas({
+    required this.calle,
+    required this.numero,
+    required this.colonia,
+    required this.ciudad,
+    required this.estado,
+    required this.direccion,
+  });
+
+  factory DireccionDesdeCoordenas.fromJson(Map<String, dynamic> json) {
+    return DireccionDesdeCoordenas(
+      calle: json['calle'],
+      numero: json['numero'],
+      colonia: json['colonia'],
+      ciudad: json['ciudad'],
+      estado: json['estado'],
+      direccion: json['direccion'] ?? '',
+    );
+  }
+}
+
 class GeocodingService {
   final String _baseUrl = 'http://localhost:3000/api';
 
@@ -66,6 +95,47 @@ class GeocodingService {
         latitud: 21.5018,
         longitud: -104.8946,
         precision: 'por defecto',
+      );
+    }
+  }
+
+  /// Obtiene la dirección desde coordenadas (reverse geocoding)
+  /// Actualiza la ubicación cuando el usuario ajusta el marcador en el mapa
+  Future<DireccionDesdeCoordenas> obtenerDireccionDesdeCoordenas({
+    required double latitud,
+    required double longitud,
+  }) async {
+    try {
+      print('GeocodingService: Llamando a reverse-geocode para Lat: $latitud, Lon: $longitud');
+      final response = await http.post(
+        Uri.parse('$_baseUrl/reverse-geocode'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'latitud': latitud,
+          'longitud': longitud,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        print('GeocodingService: Respuesta exitosa: ${data['data']}');
+        final resultado = DireccionDesdeCoordenas.fromJson(data['data']);
+        print('GeocodingService: Dirección parseada - Calle: ${resultado.calle}, Colonia: ${resultado.colonia}');
+        return resultado;
+      } else {
+        print('GeocodingService: Error HTTP ${response.statusCode}: ${response.body}');
+        throw Exception('Error en reverse geocoding: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('GeocodingService: Error en obtenerDireccionDesdeCoordenas: $e');
+      // Devolver una dirección vacía como fallback
+      return DireccionDesdeCoordenas(
+        calle: null,
+        numero: null,
+        colonia: null,
+        ciudad: null,
+        estado: null,
+        direccion: 'No se pudo obtener la dirección',
       );
     }
   }

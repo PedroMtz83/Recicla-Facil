@@ -803,7 +803,7 @@ exports.eliminarPuntoReciclaje = async (req, res) => {
 // =========================================================================
 
 const { SolicitudPunto, PuntosReciclaje } = require('../models/modelos');
-const { geocodificarDireccion } = require('../services/geocoding');
+const { geocodificarDireccion, obtenerDireccionDesdeCoordenas, TEPIC_BBOX, estaDentroDeBBox } = require('../services/geocoding');
 
 // @desc    Crear una nueva solicitud de punto de reciclaje
 // @route   POST /api/solicitudes-puntos
@@ -827,17 +827,37 @@ exports.crearSolicitudPunto = async (req, res) => {
             });
         }
 
-        // Geocodificar la dirección para obtener coordenadas
-        const coordenadas = await geocodificarDireccion(
-            direccion.calle,
-            direccion.numero,
-            direccion.colonia,
-            direccion.ciudad || 'Tepic',
-            direccion.estado || 'Nayarit',
-            direccion.pais || 'México'
-        );
+        // Permitir que el cliente envíe una ubicación ajustada por el usuario.
+        // Si no se envía o no es válida, geocodificamos la dirección.
+        let latitudFinal = null;
+        let longitudFinal = null;
 
-        // Crear la solicitud con las coordenadas geocodificadas
+        if (req.body.ubicacion && req.body.ubicacion.latitud !== undefined && req.body.ubicacion.longitud !== undefined) {
+            const { latitud, longitud } = req.body.ubicacion;
+            // Verificar que las coordenadas estén dentro de Tepic
+            if (estaDentroDeBBox(latitud, longitud, TEPIC_BBOX)) {
+                latitudFinal = latitud;
+                longitudFinal = longitud;
+            } else {
+                console.warn('Ubicación enviada por cliente fuera de Tepic — se ignorará');
+            }
+        }
+
+        // Si no tenemos coordenadas válidas aun, geocodificamos
+        if (latitudFinal === null || longitudFinal === null) {
+            const coordenadas = await geocodificarDireccion(
+                direccion.calle,
+                direccion.numero,
+                direccion.colonia,
+                direccion.ciudad || 'Tepic',
+                direccion.estado || 'Nayarit',
+                direccion.pais || 'México'
+            );
+            latitudFinal = coordenadas.latitud;
+            longitudFinal = coordenadas.longitud;
+        }
+
+        // Crear la solicitud con las coordenadas finales
         const nuevaSolicitud = new SolicitudPunto({
             nombre,
             descripcion,
@@ -848,8 +868,8 @@ exports.crearSolicitudPunto = async (req, res) => {
             usuarioSolicitante: req.usuario.nombre, // Del middleware authSimple
             estado: 'pendiente',
             ubicacion: {
-                latitud: coordenadas.latitud,
-                longitud: coordenadas.longitud
+                latitud: latitudFinal,
+                longitud: longitudFinal
             }
         });
 
@@ -1248,6 +1268,45 @@ exports.geocodificarPreview = async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Error al geocodificar'
+        });
+    }
+};
+
+// @route   POST /api/reverse-geocode
+// @access  Público (sin autenticación)
+// @desc    Obtiene la dirección aproximada desde coordenadas (lat, lon)
+//          Útil cuando el usuario ajusta manualmente la ubicación en el mapa
+exports.reverseGeocode = async (req, res) => {
+    try {
+        const { latitud, longitud } = req.body;
+
+        // Validar coordenadas
+        if (latitud === undefined || longitud === undefined) {
+            return res.status(400).json({
+                success: false,
+                error: 'Campos requeridos: latitud, longitud'
+            });
+        }
+
+        const direccion = await obtenerDireccionDesdeCoordenas(latitud, longitud);
+
+        if (!direccion) {
+            return res.status(400).json({
+                success: false,
+                error: 'No se pudo obtener la dirección para estas coordenadas'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: direccion
+        });
+
+    } catch (error) {
+        console.error('Error en reverseGeocode:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Error al realizar reverse geocoding'
         });
     }
 };
