@@ -2,12 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import '../services/geocoding_service.dart';
 
-class MapaUbicacionWidget extends StatelessWidget {
+class MapaUbicacionWidget extends StatefulWidget {
   final double latitud;
   final double longitud;
   final String? nombreUbicacion;
   final VoidCallback? onCerrar;
+  final Function(double lat, double lon, DireccionDesdeCoordenas? direccion)? onUbicacionActualizada;
 
   const MapaUbicacionWidget({
     super.key,
@@ -15,12 +17,68 @@ class MapaUbicacionWidget extends StatelessWidget {
     required this.longitud,
     this.nombreUbicacion,
     this.onCerrar,
+    this.onUbicacionActualizada,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final coordenadas = LatLng(latitud, longitud);
+  State<MapaUbicacionWidget> createState() => _MapaUbicacionWidgetState();
+}
 
+class _MapaUbicacionWidgetState extends State<MapaUbicacionWidget> {
+  late LatLng _posicionActual;
+  bool _cargando = false;
+  String? _direccionObtenida;
+  String? _errorMensaje;
+  final GeocodingService _geocodingService = GeocodingService();
+
+  @override
+  void initState() {
+    super.initState();
+    _posicionActual = LatLng(widget.latitud, widget.longitud);
+  }
+
+  DireccionDesdeCoordenas? _ultimaDireccion;
+
+  Future<void> _obtenerDireccion(LatLng nuevaPosicion) async {
+    setState(() {
+      _cargando = true;
+      _errorMensaje = null;
+    });
+
+    try {
+      final direccion = await _geocodingService.obtenerDireccionDesdeCoordenas(
+        latitud: nuevaPosicion.latitude,
+        longitud: nuevaPosicion.longitude,
+      );
+
+      setState(() {
+        if (direccion.calle != null && direccion.calle!.isNotEmpty && !direccion.calle!.contains('Desconocida') && !direccion.calle!.contains('Error')) {
+          _direccionObtenida = 'Calle: ${direccion.calle}\nNúmero: ${direccion.numero}\nColonia: ${direccion.colonia}';
+          _ultimaDireccion = direccion;
+        } else {
+          _direccionObtenida = 'Dirección no disponible en esta ubicación.\nUsa el campo de dirección manual.';
+          _ultimaDireccion = null;
+        }
+        _cargando = false;
+      });
+
+      // Notificar al widget padre
+      widget.onUbicacionActualizada?.call(
+        nuevaPosicion.latitude,
+        nuevaPosicion.longitude,
+        _ultimaDireccion,
+      );
+    } catch (e) {
+      print('Error en _obtenerDireccion: $e');
+      setState(() {
+        _errorMensaje = 'Error al obtener dirección: $e';
+        _cargando = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Dialog(
       insetPadding: EdgeInsets.all(16),
       child: Column(
@@ -34,7 +92,7 @@ class MapaUbicacionWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Vista Previa - ${nombreUbicacion ?? "Ubicación"}',
+                  'Ajustar - ${widget.nombreUbicacion ?? "Ubicación"}',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -43,55 +101,102 @@ class MapaUbicacionWidget extends StatelessWidget {
                 ),
                 IconButton(
                   icon: Icon(Icons.close, color: Colors.white),
-                  onPressed: onCerrar ?? () => Navigator.pop(context),
+                  onPressed: widget.onCerrar ?? () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
-          // Mapa
+          // Mapa interactivo
           Container(
             height: 400,
             width: double.maxFinite,
-            child: FlutterMap(
-              options: MapOptions(
-                center: coordenadas,
-                zoom: 17.0,
-              ),
+            child: Stack(
               children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.reciclaFacil',
-                  additionalOptions: {
-                    'access_token': '',
-                  },
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: coordenadas,
-                      width: 50,
-                      height: 50,
-                      builder: (ctx) => Container(
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
+                FlutterMap(
+                  options: MapOptions(
+                    center: _posicionActual,
+                    zoom: 17.0,
+                    onTap: (tapPosition, point) {
+                      // Permitir click en el mapa para colocar marcador
+                      setState(() => _posicionActual = point);
+                      _obtenerDireccion(point);
+                    },
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.reciclaFacil',
+                      additionalOptions: {
+                        'access_token': '',
+                      },
+                    ),
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _posicionActual,
+                          width: 50,
+                          height: 50,
+                          builder: (ctx) => GestureDetector(
+                            onPanUpdate: (details) {
+                              // Permite arrastrar el marcador
+                              // Nota: Para arrastrar correctamente necesitarías
+                              // transformar las coordenadas de pantalla a LatLng
+                              // Por ahora, usamos tap del mapa
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
-                          ],
+                          ),
                         ),
-                        child: Icon(
-                          Icons.location_on,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
+                // Overlay con instrucciones
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Toca el mapa para ajustar la ubicación',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                // Indicador de carga
+                if (_cargando)
+                  Positioned.fill(
+                    child: Container(
+                      color: Colors.black12,
+                      child: Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -104,15 +209,33 @@ class MapaUbicacionWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Coordenadas:',
+                  'Coordenadas Actuales:',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 8),
-                Text('Lat: ${latitud.toStringAsFixed(6)}'),
-                Text('Lon: ${longitud.toStringAsFixed(6)}'),
+                Text('Lat: ${_posicionActual.latitude.toStringAsFixed(6)}'),
+                Text('Lon: ${_posicionActual.longitude.toStringAsFixed(6)}'),
                 SizedBox(height: 16),
+                if (_direccionObtenida != null) ...[
+                  Text(
+                    'Dirección Detectada:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    _direccionObtenida!,
+                    style: TextStyle(color: Colors.green[700]),
+                  ),
+                  SizedBox(height: 16),
+                ],
+                if (_errorMensaje != null)
+                  Text(
+                    _errorMensaje!,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                SizedBox(height: 12),
                 Text(
-                  'Nota: La ubicación mostrada es una aproximación basada en la geocodificación de tu dirección.',
+                  'Nota: Toca el mapa para ajustar la ubicación. La dirección se actualizará automáticamente.',
                   style: TextStyle(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
@@ -129,27 +252,28 @@ class MapaUbicacionWidget extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 ElevatedButton.icon(
-                  onPressed: onCerrar ?? () => Navigator.pop(context),
+                  onPressed:
+                      widget.onCerrar ?? () => Navigator.pop(context),
                   icon: Icon(Icons.close),
-                  label: Text('Cerrar'),
+                  label: Text('Cancelar'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey,
                   ),
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    // Copiar al portapapeles
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Coordenadas copiadas al portapapeles'),
-                        duration: Duration(seconds: 2),
-                      ),
+                    // Guardar la ubicación ajustada y enviar también la dirección
+                    widget.onUbicacionActualizada?.call(
+                      _posicionActual.latitude,
+                      _posicionActual.longitude,
+                      _ultimaDireccion,
                     );
+                    Navigator.pop(context);
                   },
-                  icon: Icon(Icons.copy),
-                  label: Text('Copiar Coords'),
+                  icon: Icon(Icons.check),
+                  label: Text('Guardar Ubicación'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.green,
                   ),
                 ),
               ],

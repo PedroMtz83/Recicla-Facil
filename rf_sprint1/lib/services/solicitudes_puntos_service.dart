@@ -41,12 +41,16 @@ class SolicitudesPuntosService {
   List<String> get tiposMaterialDisponibles => ['Todos', 'Aluminio', 'Cartón', 'Papel', 'PET', 'Vidrio'];
 
   // Crear una nueva solicitud de punto de reciclaje 
-  Future<bool> crearSolicitud(SolicitudPunto solicitud, {required String userName, bool isAdmin = false}) async {
+  Future<bool> crearSolicitud(SolicitudPunto solicitud, {Map<String, dynamic>? ubicacion, required String userName, bool isAdmin = false}) async {
     try {
+      final bodyMap = solicitud.toJson();
+      if (ubicacion != null) {
+        bodyMap['ubicacion'] = ubicacion;
+      }
       final response = await http.post(
         Uri.parse('$_apiRoot/solicitudes-puntos'),
         headers: _getHeaders(userName, isAdmin),
-        body: jsonEncode(solicitud.toJson()),
+        body: jsonEncode(bodyMap),
       );
 
       if (response.statusCode == 201) {

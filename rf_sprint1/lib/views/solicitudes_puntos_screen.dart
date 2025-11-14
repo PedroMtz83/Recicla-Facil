@@ -690,6 +690,54 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
             ? _nombreController.text
             : 'Punto de Reciclaje',
         onCerrar: () => Navigator.pop(context),
+        onUbicacionActualizada: (lat, lon, direccion) {
+          // Actualizar la preview con las nuevas coordenadas
+          setState(() {
+            _ubicacionPreview = UbicacionPreview(
+              latitud: lat,
+              longitud: lon,
+              precision: 'ajustada-usuario',
+            );
+            
+            // Si la dirección reverse trae componentes válidos, actualizar campos
+            if (direccion != null && 
+                direccion.calle != null && 
+                direccion.calle!.isNotEmpty &&
+                !direccion.calle!.contains('Desconocida') &&
+                !direccion.calle!.contains('Error')) {
+              
+              // Solo actualizar si el componente tiene contenido significativo
+              if (direccion.calle!.isNotEmpty) {
+                _calleController.text = direccion.calle!;
+              }
+              if (direccion.numero != null && direccion.numero!.isNotEmpty) {
+                _numeroController.text = direccion.numero!;
+              }
+              if (direccion.colonia != null && 
+                  direccion.colonia!.isNotEmpty &&
+                  !direccion.colonia!.contains('Desconocida')) {
+                _coloniaController.text = direccion.colonia!;
+              }
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Dirección actualizada desde el mapa'),
+                  duration: Duration(seconds: 2),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            } else {
+              // Si no hay dirección válida, solo mostrar que se actualizó la ubicación
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Ubicación actualizada. Ingresa los datos de dirección manualmente.'),
+                  duration: Duration(seconds: 2),
+                  backgroundColor: Colors.amber,
+                ),
+              );
+            }
+          });
+        },
       ),
     );
   }
@@ -823,6 +871,10 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
       // Pasar la solicitud con los datos de autenticación del usuario
       final success = await _solicitudesService.crearSolicitud(
         solicitud,
+        ubicacion: _ubicacionPreview != null ? {
+          'latitud': _ubicacionPreview!.latitud,
+          'longitud': _ubicacionPreview!.longitud,
+        } : null,
         userName: authProvider.userName!,
         isAdmin: authProvider.isAdmin,
       );
