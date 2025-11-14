@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rf_sprint1/puntos_provider.dart';
+import 'package:rf_sprint1/solicitudes_provider.dart';
 import 'package:rf_sprint1/views/contenido_screen.dart';
 
 // Importa tus vistas y providers
@@ -9,6 +10,7 @@ import 'package:rf_sprint1/views/puntos_tabs_screen.dart';
 import 'package:rf_sprint1/views/quejas_tabs_screen.dart';
 import 'package:rf_sprint1/views/register_screen.dart';
 import 'package:rf_sprint1/views/login_screen.dart';
+import 'admin_solicitudes_provider.dart';
 import 'auth_provider.dart';
 
 void main() {
@@ -19,6 +21,8 @@ void main() {
         // Ahora es persistente y no se reiniciará con las reconstrucciones de la UI.
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PuntosProvider()),
+        ChangeNotifierProvider(create: (_) => SolicitudesProvider()),
+        ChangeNotifierProvider(create: (_) => AdminSolicitudesProvider()),
         // Si en el futuro necesitas otro provider, lo añadirías aquí:
         // ChangeNotifierProvider(create: (_) => QuejaProvider()),
       ],
@@ -79,9 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> _pageTitles = [
     "Mi perfil",
     "Quejas y sugerencias",
-    'Contenido informativo',
+    'Contenido educativo',
     'Puntos de reciclaje',
-    'Gestionar Puntos de reciclaje'
   ];
 
   void _onItemTapped(int index) {
@@ -166,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: Icon(Icons.info),
-              title: Text('Contenido informativo'),
+              title: Text('Contenido educativo'),
               selected: _currentIndex == 2,
               selectedTileColor: Colors.green.withOpacity(0.1),
               onTap: () {

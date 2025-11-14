@@ -135,7 +135,7 @@ class GeocodingService {
     try {
       print('GeocodingService: Llamando a reverse-geocode para Lat: $latitud, Lon: $longitud');
       final response = await http.post(
-        Uri.parse('$_baseUrl/reverse-geocode'),
+        Uri.parse('$_apiRoot/reverse-geocode'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'latitud': latitud,

@@ -53,7 +53,6 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text('Contenido Educativo'),
         backgroundColor: Colors.white,
         elevation: 1,
       ),

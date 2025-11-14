@@ -31,16 +31,16 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
     'preparacion-materiales'
   ];
   final List<String> _materiales = [
-    'plastico',
-    'vidrio',
+    'todos',
+    'aluminio',
+    'cartón',
     'papel',
-    'metal',
-    'organico',
-    'electronico',
-    'general'
+    'pet',
+    'vidrio',
+
   ];
   String catSelect='tipos-materiales';
-  String materialSelect='plastico';
+  String materialSelect='pet';
 
 
   bool _estaCargando = false;

@@ -89,7 +89,7 @@ const contenidoEducativoSchema = new mongoose.Schema({
     },
     tipo_material: {
         type: String,
-        enum: ['Todos', 'Aluminio', 'Cartón', 'Papel', 'PET', 'Vidrio'],
+        enum: ['todos', 'aluminio', 'cartón', 'papel', 'pet', 'vidrio'],
         required: [true, 'El tipo de material es obligatorio']
     },
     imagenes: [{

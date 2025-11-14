@@ -263,6 +263,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
       ),
       // NUEVO: Floating Action Button para crear solicitud rápida
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab_puntos_screen',
         onPressed: _navegarANuevaSolicitud,
         child: Icon(Icons.add_location_alt),
         backgroundColor: Colors.green,

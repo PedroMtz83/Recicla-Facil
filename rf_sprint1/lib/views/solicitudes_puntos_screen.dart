@@ -6,6 +6,9 @@ import 'package:rf_sprint1/models/solicitud_punto.dart';
 import 'package:rf_sprint1/auth_provider.dart';
 import 'package:rf_sprint1/widgets/mapa_ubicacion_widget.dart';
 
+import '../admin_solicitudes_provider.dart';
+import '../solicitudes_provider.dart';
+
 class SolicitudesPuntosScreen extends StatefulWidget {
   const SolicitudesPuntosScreen({super.key});
 
@@ -14,43 +17,32 @@ class SolicitudesPuntosScreen extends StatefulWidget {
 }
 
 class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
-  final SolicitudesPuntosService _solicitudesService = SolicitudesPuntosService();
-  List<SolicitudPunto> _solicitudes = [];
-  bool _cargando = true;
+
   bool _mostrarSoloPendientes = true;
 
   @override
   void initState() {
     super.initState();
-    _cargarSolicitudes();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isLoggedIn) {
+        Provider.of<SolicitudesProvider>(context, listen: false)
+            .cargarSolicitudesUsuario(authProvider.userName!, authProvider.isAdmin);
+      }
+    });
   }
 
   Future<void> _cargarSolicitudes() async {
-    try {
+
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.isLoggedIn) {
         // Usar el nombre de usuario real del AuthProvider
-        final solicitudes = await _solicitudesService.obtenerSolicitudesPorUsuario(
-          authProvider.userName!,
-          userName: authProvider.userName!,
-          isAdmin: authProvider.isAdmin,
-        );
-        setState(() {
-          _solicitudes = solicitudes;
-          _cargando = false;
-        });
+        await Provider.of<SolicitudesProvider>(context, listen: false)
+            .cargarSolicitudesUsuario(authProvider.userName!, authProvider.isAdmin);
       } else {
         _mostrarError('Debes iniciar sesión para ver tus solicitudes');
-        setState(() {
-          _cargando = false;
-        });
       }
-    } catch (e) {
-      _mostrarError('Error al cargar las solicitudes: $e');
-      setState(() {
-        _cargando = false;
-      });
-    }
+
   }
 
   void _mostrarError(String mensaje) {
@@ -71,33 +63,27 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
     );
   }
 
-  List<SolicitudPunto> _getSolicitudesFiltradas() {
+  List<SolicitudPunto> _getSolicitudesFiltradas(List<SolicitudPunto> solicitudes) {
     if (_mostrarSoloPendientes) {
-      return _solicitudes.where((s) => s.estado == 'pendiente').toList();
+      return solicitudes.where((s) => s.estado == 'pendiente').toList();
     }
-    return _solicitudes;
+    return solicitudes;
   }
 
   void _nuevaSolicitud() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (!authProvider.isLoggedIn) {
-      _mostrarError('Debes iniciar sesión para crear una solicitud');
-      return;
-    }
-
     final resultado = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => NuevaSolicitudPuntoScreen()),
     );
-    
     if (resultado == true) {
-      _cargarSolicitudes(); // Recargar si se creó una nueva solicitud
       _mostrarExito('Solicitud creada exitosamente');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final solicitudesProvider = context.watch<SolicitudesProvider>();
+    final solicitudesFiltradas = _getSolicitudesFiltradas(solicitudesProvider.solicitudes);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -145,12 +131,13 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
           ),
         ],
       ),
-      body: _cargando
+      body: solicitudesProvider.isLoading
           ? Center(child: CircularProgressIndicator())
-          : _getSolicitudesFiltradas().isEmpty
+          : solicitudesFiltradas.isEmpty
               ? _buildEmptyState()
-              : _buildListaSolicitudes(),
+              : _buildListaSolicitudes(solicitudesFiltradas),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab_mis_solicitudes',
         onPressed: _nuevaSolicitud,
         child: Icon(Icons.add_location_alt),
         backgroundColor: Colors.green,
@@ -187,9 +174,7 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
     );
   }
 
-  Widget _buildListaSolicitudes() {
-    final solicitudesFiltradas = _getSolicitudesFiltradas();
-    
+  Widget _buildListaSolicitudes(List<SolicitudPunto> solicitudes) {
     return Column(
       children: [
         Padding(
@@ -200,7 +185,7 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '${solicitudesFiltradas.length} solicitud(es) ${_mostrarSoloPendientes ? 'pendientes' : 'en total'}',
+                  '${solicitudes.length} solicitud(es) ${_mostrarSoloPendientes ? 'pendientes' : 'en total'}',
                   style: TextStyle(color: Colors.blue[700]),
                 ),
               ),
@@ -209,9 +194,9 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: solicitudesFiltradas.length,
+            itemCount: solicitudes.length,
             itemBuilder: (context, index) {
-              return _buildTarjetaSolicitud(solicitudesFiltradas[index]);
+              return _buildTarjetaSolicitud(solicitudes[index]);
             },
           ),
         ),
@@ -880,6 +865,16 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
       );
       
       if (success) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+        // Notifica al provider del usuario (como ya lo tienes)
+        Provider.of<SolicitudesProvider>(context, listen: false)
+            .cargarSolicitudesUsuario(authProvider.userName!, authProvider.isAdmin);
+
+        // --- ¡LA PIEZA CLAVE! Notifica también al provider del admin ---
+        Provider.of<AdminSolicitudesProvider>(context, listen: false)
+            .cargarSolicitudesPendientes(authProvider.userName!, authProvider.isAdmin);
+
         Navigator.pop(context, true); // Regresar indicando éxito
       } else {
         throw Exception('Error al enviar la solicitud');

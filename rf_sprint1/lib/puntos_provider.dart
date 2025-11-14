@@ -13,6 +13,33 @@ class PuntosProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // El método clave para cargar y recargar los datos
+  void setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners(); // Notifica a los widgets para que se reconstruyan (ej: mostrar un spinner)
+  }
+  Future<bool> eliminarPunto(String puntoId) async {
+    // 1. Inicia el estado de carga
+    setLoading(true);
+
+    try {
+      // 2. Llama al servicio
+      bool exito = await PuntosReciclajeService.eliminarPuntoReciclaje(puntoId);
+
+      if (exito) {
+        // 3. Si tuvo éxito, recarga la lista de puntos para que el eliminado desaparezca
+        await cargarPuntos(); // Reutilizamos el método de carga
+      }
+
+      // 4. Detiene el estado de carga (esto se ejecuta si hubo éxito o no)
+      setLoading(false);
+      return exito;
+
+    } catch (e) {
+      debugPrint("Error en PuntosProvider al eliminar: $e");
+      setLoading(false); // Asegúrate de detener la carga también en caso de error
+      return false;
+    }
+  }
   Future<void> cargarPuntos({String material = 'Todos'}) async {
     // Evita cargas múltiples si ya se está cargando
     if (_isLoading) return;

@@ -37,13 +37,12 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     'preparacion-materiales'
   ];
   final List<String> _materiales = [
-    'plastico',
-    'vidrio',
+    'todos',
+    'aluminio',
+    'cartón',
     'papel',
-    'metal',
-    'organico',
-    'electronico',
-    'general'
+    'pet',
+    'vidrio'
   ];
   String catSelect='tipos-materiales';
   String materialSelect='plastico';

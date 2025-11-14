@@ -1,13 +1,13 @@
 // lib/views/admin_puntos_screen.dart
 
 import 'package:flutter/material.dart';
+import '../admin_solicitudes_provider.dart';
 import '../models/punto_reciclaje.dart';
 import '../models/solicitud_punto.dart';
-import '../services/puntos_reciclaje_service.dart';
+import '../puntos_provider.dart';
 import '../services/solicitudes_puntos_service.dart';
 import '../auth_provider.dart';
 import 'package:provider/provider.dart';
-
 import 'dialog_editar_punto_screen.dart';
 
 class AdminPuntosScreen extends StatefulWidget {
@@ -20,60 +20,34 @@ class AdminPuntosScreen extends StatefulWidget {
 class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   int _selectedIndex = 0;
 
-   List<PuntoReciclaje> _puntosGestion=[];
-   List<SolicitudPunto> _solicitudesPorValidar=[];
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _cargarDatos();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Llama al provider de puntos
+      Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
+
+      // Llama al NUEVO provider de solicitudes de admin
+      Provider.of<AdminSolicitudesProvider>(context, listen: false)
+          .cargarSolicitudesPendientes(authProvider.userName!, authProvider.isAdmin);
+    });
   }
 
   Future<void> _cargarDatos() async {
-    try {
-      final authProvider = context.read<AuthProvider>();
-      final userName = authProvider.userName ?? '';
-      final isAdmin = authProvider.isAdmin;
+    final authProvider = context.read<AuthProvider>();
 
-      final resultadosDinamicos = await Future.wait([
-        PuntosReciclajeService.obtenerPuntosReciclajeEstado("true"),
-        SolicitudesPuntosService().obtenerSolicitudesPendientes(
-          userName: userName,
-          isAdmin: isAdmin,
-        ),
-      ]);
-
-      final List<PuntoReciclaje> listaAceptados = (resultadosDinamicos[0] as List)
-          .map((data) => PuntoReciclaje.fromJson(data as Map<String, dynamic>))
-          .toList();
-      final List<SolicitudPunto> listaSolicitudes = resultadosDinamicos[1] as List<SolicitudPunto>;
-
-      if (mounted) {
-        setState(() {
-          _puntosGestion = listaAceptados;
-          _solicitudesPorValidar = listaSolicitudes;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("Error al cargar los datos de gestión: $e");
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No se pudieron cargar los datos.')),
-        );
-      }
-    }
+    await Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
+    await Provider.of<AdminSolicitudesProvider>(context, listen: false)
+        .cargarSolicitudesPendientes(authProvider.userName!, authProvider.isAdmin);
   }
 
   // Lista de widgets que se mostrarán en el body
-  List<Widget> _buildScreens() {
+  List<Widget> _buildScreens(List <PuntoReciclaje> puntosGestion, List<SolicitudPunto> solicitudes) {
     return [
-      _buildGestionarScreen(),
-      _buildValidarScreen(),
+      _buildGestionarScreen(puntosGestion),
+      _buildValidarScreen(solicitudes),
     ];
   }
 
@@ -85,6 +59,8 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final puntosProvider = context.watch<PuntosProvider>();
+    final adminSolicitudesProvider = context.watch<AdminSolicitudesProvider>();
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -114,26 +90,31 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
           ),
         ],
       ),
-      body: _isLoading ? Center (
+      body: adminSolicitudesProvider.isLoading ? Center (
         child: CircularProgressIndicator(),
       ): IndexedStack(
         index: _selectedIndex,
-        children: _buildScreens(),
+        children: _buildScreens(puntosProvider.puntos, adminSolicitudesProvider.solicitudesPendientes),
       ),
     );
   }
 
   // --- PANTALLA 1: GESTIONAR PUNTOS ---
-  Widget _buildGestionarScreen() {
-    if (_puntosGestion.isEmpty) {
-      return const Center(child: Text('No hay puntos de reciclaje para gestionar.'));
+  Widget _buildGestionarScreen(List <PuntoReciclaje> puntosGestion) {
+    final puntosProvider = context.watch<PuntosProvider>();
+    if (puntosProvider.isLoading && puntosGestion.isEmpty) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (puntosGestion.isEmpty) {
+      return Center(child: Text('No hay puntos de reciclaje para gestionar.'));
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8.0),
-      itemCount: _puntosGestion.length,
+      padding: EdgeInsets.all(8.0),
+      itemCount: puntosGestion.length,
       itemBuilder: (context, index) {
-        final centro = _puntosGestion[index];
+        final centro = puntosGestion[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           elevation: 2,
@@ -205,12 +186,11 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
           punto: punto,
           // Pasamos una función 'callback' que se ejecutará cuando la actualización sea exitosa.
           onPuntoActualizado: () {
-            setState(() {
+
               // Vuelve a cargar los datos desde la API para refrescar la lista
               // con la información más reciente.
               _cargarDatos();
-            });
-
+              Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
             // Muestra un mensaje de éxito.
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -222,23 +202,6 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         );
       },
     );
-  }
-
-  Future<void> _aceptarPunto(PuntoReciclaje punto) async {
-    try {
-      final resultado = await PuntosReciclajeService.aceptarPunto(
-          punto.id);
-      if (mounted) {
-        if (resultado['statusCode'] == 200) {
-          _mostrarSnackBar('Punto aceptado correctamente.');
-          _cargarDatos();
-        } else {
-          _mostrarSnackBar(resultado['mensaje'] ?? 'Error al aceptar el punto.', esError: true);
-        }
-      }
-    } catch (e) {
-      if (mounted) _mostrarSnackBar(e.toString(), esError: true);
-    }
   }
 
   Future<void> _aprobarSolicitud(SolicitudPunto solicitud) async {
@@ -258,6 +221,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
         if (resultado) {
           _mostrarSnackBar('✓ Solicitud aprobada correctamente. El punto aparecerá en el mapa.');
           _cargarDatos();
+          Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
         } else {
           _mostrarSnackBar('Error al aprobar la solicitud.', esError: true);
         }
@@ -268,8 +232,8 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
   }
 
 // --- PANTALLA 2: VALIDAR SOLICITUDES DE PUNTOS ---
-  Widget _buildValidarScreen() {
-    if (_solicitudesPorValidar.isEmpty) {
+  Widget _buildValidarScreen(List<SolicitudPunto> solicitudesPorValidar) {
+    if (solicitudesPorValidar.isEmpty) {
       return const Center(
           child: Padding(
             padding: EdgeInsets.all(16.0),
@@ -280,9 +244,9 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(8.0),
-      itemCount: _solicitudesPorValidar.length,
+      itemCount: solicitudesPorValidar.length,
       itemBuilder: (context, index) {
-        final solicitud = _solicitudesPorValidar[index];
+        final solicitud = solicitudesPorValidar[index];
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           elevation: 3,
@@ -452,23 +416,14 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
             icon:  Icon(Icons.warning),
             label:  Text('Sí, Eliminar'),
             onPressed: () async {
-              if (_isLoading) return;
-              setState(() => _isLoading = true);
               Navigator.of(ctx).pop();
-
-              try {
-                bool resultado = await PuntosReciclajeService.eliminarPuntoReciclaje(puntoId);
-                if (resultado) {
+              final puntosProvider = Provider.of<PuntosProvider>(context, listen: false);
+                bool resultado = await puntosProvider.eliminarPunto(puntoId);                if (resultado) {
                   _mostrarSnackBar('Punto eliminado correctamente.');
-                  _cargarDatos();
+                  Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
                 } else {
                   _mostrarSnackBar('Error al eliminar el punto.');
                 }
-              } catch (e) {
-                _mostrarSnackBar(e.toString(), esError: true);
-              } finally {
-                setState(() => _isLoading = false);
-              }
             },
           ),
         ],
