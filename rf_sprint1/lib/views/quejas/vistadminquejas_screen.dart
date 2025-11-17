@@ -17,13 +17,13 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
   String? _categoriaFiltro;
   final List<String> _categoriasDisponibles = [
     // La primera opción siempre será para ver todas las quejas.
-    'Todas las Pendientes',
+    'Todas las pendientes',
     // El resto de categorías que usas en tu formulario.
-    'Sugerencia / Nueva Funcionalidad',
+    'Sugerencia / Nueva funcionalidad',
     'Duda',
-    'Reporte de Falla Técnica (Error)',
-    'Diseño y Facilidad de Uso',
-    'Información sobre Reciclaje',
+    'Reporte de falla técnica (error)',
+    'Diseño y facilidad de uso',
+    'Información sobre reciclaje',
     'Cuenta / Perfil',
     'Otro',
   ];
@@ -37,7 +37,7 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
   void _recargarQuejas() {
     setState(() {
       // Si no hay filtro o el filtro es "Todas", llamamos al método original.
-      if (_categoriaFiltro == null || _categoriaFiltro == 'Todas las Pendientes') {
+      if (_categoriaFiltro == null || _categoriaFiltro == 'Todas las pendientes') {
         _quejasFuture = _quejaService.obtenerQuejasPendientes();
       } else {
         // Si hay una categoría seleccionada, llamamos al nuevo método.
@@ -97,7 +97,7 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
                   ),
 
                   Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: EdgeInsets.all(20.0),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,12 +239,12 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
   // ==========================================================
   // LÓGICA PARA ELIMINAR QUEJA
   // ==========================================================
-  void _eliminarQueja(String quejaId) {
+  void _eliminarQueja(String quejaId, String quejaCorreo) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title:  Text('Confirmar Eliminación'),
-        content:  Text('¿Estás seguro de que deseas eliminar esta queja? Esta acción no se puede deshacer.'),
+        content:  Text('¿Estás seguro de que deseas eliminar esta queja escrita por ${quejaCorreo}? Esta acción no se puede deshacer.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -296,10 +296,10 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
         Padding(
           padding:  EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
           child: DropdownButtonFormField<String>(
-            value: _categoriaFiltro ?? 'Todas las Pendientes',
+            value: _categoriaFiltro ?? 'Todas las pendientes',
             hint:  Text("Filtrar por categoría"),
             decoration:  InputDecoration(
-              labelText: 'Filtro de Categorías',
+              labelText: 'Filtro de categorías',
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.filter_list),
               contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
@@ -394,7 +394,7 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
                               ),
                               IconButton(
                                 icon:  Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => _eliminarQueja(queja.id),
+                                onPressed: () => _eliminarQueja(queja.id, queja.correo),
                                 tooltip: 'Eliminar Queja',
                               ),
                             ],

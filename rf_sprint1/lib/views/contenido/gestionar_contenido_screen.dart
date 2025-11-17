@@ -70,12 +70,12 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
     });
   }
 
-  Future<void> _eliminarContenido(String id) async {
+  Future<void> _eliminarContenido(String id, String titulo) async {
     final bool confirmar = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Confirmar eliminación'),
-        content: Text('¿Estás seguro de que deseas eliminar este contenido?'),
+        content: Text('¿Estás seguro de que deseas eliminar el contenido de ${titulo}?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -482,7 +482,7 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
                             ),
                             IconButton(
                               icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _eliminarContenido(contenido.id),
+                              onPressed: () => _eliminarContenido(contenido.id, contenido.titulo),
                             ),
                           ],
                         ),

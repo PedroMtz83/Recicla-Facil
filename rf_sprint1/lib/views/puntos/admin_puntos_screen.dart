@@ -64,7 +64,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _selectedIndex == 0 ? 'Gestionar Puntos' : 'Validar Solicitudes',
+          _selectedIndex == 0 ? 'Gestionar puntos' : 'Validar solicitudes',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
@@ -116,42 +116,42 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
       itemBuilder: (context, index) {
         final centro = puntosGestion[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           elevation: 2,
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: EdgeInsets.all(12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(centro.nombre, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
+                Text(centro.nombre, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
                 Text(centro.direccion, style: TextStyle(color: Colors.grey[700])),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      icon: const Icon(Icons.edit, size: 20),
-                      label: const Text('Editar'),
+                      icon: Icon(Icons.edit, size: 20),
+                      label: Text('Editar'),
                       onPressed: () {
                         // TODO: Lógica para editar el centro
                         _editarPunto(context, centro);
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.blue[700],
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     TextButton.icon(
-                      icon: const Icon(Icons.delete_outline, size: 20),
-                      label: const Text('Eliminar'),
+                      icon: Icon(Icons.delete_outline, size: 20),
+                      label: Text('Eliminar'),
                       onPressed: () async {
-                        _eliminarPunto(centro.id);
+                        _eliminarPunto(centro.id, centro.nombre);
                       },
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red[700],
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
                     ),
                   ],
@@ -175,25 +175,17 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     );
   }
   void _editarPunto(BuildContext context, PuntoReciclaje punto) {
-    // `punto` es el objeto que queremos editar (centro en tu código original)
     showDialog(
       context: context,
-      // `barrierDismissible: false` evita que el diálogo se cierre al tocar fuera
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
-        // Usamos un widget separado para el formulario para mantener el código limpio.
         return DialogoEditarPunto(
           punto: punto,
-          // Pasamos una función 'callback' que se ejecutará cuando la actualización sea exitosa.
           onPuntoActualizado: () {
-
-              // Vuelve a cargar los datos desde la API para refrescar la lista
-              // con la información más reciente.
               _cargarDatos();
               Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
-            // Muestra un mensaje de éxito.
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
+              SnackBar(
                 content: Text('Punto de reciclaje actualizado con éxito.'),
                 backgroundColor: Colors.green,
               ),
@@ -231,7 +223,6 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     }
   }
 
-// --- PANTALLA 2: VALIDAR SOLICITUDES DE PUNTOS ---
   Widget _buildValidarScreen(List<SolicitudPunto> solicitudesPorValidar) {
     if (solicitudesPorValidar.isEmpty) {
       return const Center(
@@ -243,12 +234,12 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
       itemCount: solicitudesPorValidar.length,
       itemBuilder: (context, index) {
         final solicitud = solicitudesPorValidar[index];
         return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          margin: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           elevation: 3,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -256,11 +247,10 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
           ),
           color: Colors.orange[50],
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- Encabezado con usuario solicitante ---
                 Row(
                   children: [
                     Expanded(
@@ -268,16 +258,20 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(solicitud.nombre,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87)),
-                          const SizedBox(height: 4),
+                                  color: Colors.black87
+                              )
+                          ),
+                          SizedBox(height: 4),
                           Text('Solicitado por: ${solicitud.usuarioSolicitante}',
                               style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[600],
-                                  fontStyle: FontStyle.italic)),
+                                  fontStyle: FontStyle.italic
+                              )
+                          ),
                         ],
                       ),
                     ),
@@ -298,25 +292,24 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                     ),
                   ],
                 ),
-                const Divider(height: 20),
+                Divider(height: 20),
 
-                // --- Fila de Dirección ---
                 _buildInfoRow(
                     Icons.location_on_outlined, 
                     'Dirección', 
                     '${solicitud.direccion.calle} ${solicitud.direccion.numero}, ${solicitud.direccion.colonia}'),
 
-                // --- Fila de Descripción ---
                 _buildInfoRow(
                     Icons.description_outlined, 'Descripción', solicitud.descripcion),
                 
-                // --- Fila de Tipos de Material ---
                 if (solicitud.tipoMaterial.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text('Materiales que acepta:',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, color: Colors.grey[800])),
-                  const SizedBox(height: 8),
+                          fontWeight: FontWeight.bold, color: Colors.grey[800]
+                      )
+                  ),
+                  SizedBox(height: 8),
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 4.0,
@@ -326,22 +319,21 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
                         backgroundColor: Colors.green[100],
                         side: BorderSide.none,
                         padding:
-                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       );
                     }).toList(),
                   ),
                 ],
 
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
-                // --- Botones de Acción ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const Icon(Icons.close),
-                        label: const Text('Rechazar'),
+                        icon: Icon(Icons.close),
+                        label: Text('Rechazar'),
                         onPressed: () => _mostrarDialogoRechazo(solicitud),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[600],
@@ -400,12 +392,12 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     );
   }
 
-  void _eliminarPunto(String puntoId) {
+  void _eliminarPunto(String puntoId, String nombre) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title:  Text('Confirmar Eliminación'),
-        content:  Text('¿Estás seguro de que deseas eliminar este punto? Esta acción no se puede deshacer.'),
+        content:  Text('¿Estás seguro de que deseas eliminar el punto de ${nombre}? Esta acción no se puede deshacer.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -418,7 +410,8 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
             onPressed: () async {
               Navigator.of(ctx).pop();
               final puntosProvider = Provider.of<PuntosProvider>(context, listen: false);
-                bool resultado = await puntosProvider.eliminarPunto(puntoId);                if (resultado) {
+                bool resultado = await puntosProvider.eliminarPunto(puntoId);
+                if (resultado) {
                   _mostrarSnackBar('Punto eliminado correctamente.');
                   Provider.of<PuntosProvider>(context, listen: false).cargarPuntos();
                 } else {
@@ -437,7 +430,7 @@ class _AdminPuntosScreenState extends State<AdminPuntosScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Rechazar Solicitud'),
+        title: Text('Rechazar solicitud'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

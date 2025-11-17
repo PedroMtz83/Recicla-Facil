@@ -309,7 +309,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
               ElevatedButton.icon(
                 onPressed: _navegarANuevaSolicitud,
                 icon: Icon(Icons.add_location_alt),
-                label: Text('Solicitar Nuevo Punto'),
+                label: Text('Solicitar nuevo punto'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,

@@ -20,24 +20,19 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
   @override
   void initState() {
     super.initState();
-    // Llama al servicio para obtener las quejas del usuario logueado.
-    // El ApiService debería usar el token del AuthProvider para hacer la llamada segura.
     final QuejaService _ = QuejaService();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Este método se llama después de initState y cuando las dependencias (como Provider) cambian.
-    // Es el lugar seguro para obtener datos del Provider.
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userEmail = authProvider.userEmail;
 
     if (userEmail != null) {
-      // Llama al método pasándole el email del usuario logueado.
-      _misQuejasFuture = _quejaService.obtenerMisQuejas(userEmail); // <-- 5. Pasa el email
+
+      _misQuejasFuture = _quejaService.obtenerMisQuejas(userEmail);
     } else {
-      // Maneja el caso en que el email no esté disponible (no debería pasar si está logueado)
       _misQuejasFuture = Future.error('No se pudo identificar el email del usuario.');
     }
   }
@@ -58,8 +53,6 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
         }
 
         final misQuejas = snapshot.data!;
-        // Muestra una lista simple de las quejas del usuario.
-        // El usuario solo puede verlas, no puede atenderlas ni eliminarlas.
         return ListView.builder(
           itemCount: misQuejas.length,
           itemBuilder: (ctx, index) {
@@ -89,32 +82,23 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
     showDialog(
       context: context,
       builder: (context) {
-        // Para formatear las fechas de una manera más legible
         final DateFormat formatter = DateFormat('dd/MM/yyyy - hh:mm a');
 
         return AlertDialog(
-          // 1. Título del diálogo
-          title: Text('Detalles de la Queja'),
+          title: Text('Detalles de la queja'),
 
-          // 2. Quitamos el padding por defecto para que la Card se ajuste bien.
           contentPadding: EdgeInsets.zero,
 
-          // 3. El contenido principal ahora es una Card.
           content: Card(
-            // La Card no necesita sombra ni bordes extra aquí,
-            // porque ya está dentro de un AlertDialog.
             elevation: 0,
             margin: EdgeInsets.zero,
 
-            // 4. SingleChildScrollView para evitar que el contenido se desborde
-            //    si los textos son muy largos.
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(16.0), // Padding interno para la Card
+              padding: EdgeInsets.all(16.0),
               child: Column(
-                mainAxisSize: MainAxisSize.min, // Hace que la columna sea compacta
-                crossAxisAlignment: CrossAxisAlignment.start, // Alinea todo a la izquierda
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- Usaremos un widget auxiliar para no repetir código ---
                   _construirInfoRenglon(
                     icon: Icons.category,
                     label: 'Categoría',
@@ -129,27 +113,23 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
                     icon: q.estado == 'Pendiente' ? Icons.hourglass_top : Icons.check_circle,
                     label: 'Estado',
                     value: q.estado,
-                    // Color condicional para el valor
                     valueColor: q.estado == 'Pendiente' ? Colors.orange.shade700 : Colors.green.shade700,
                   ),
                   _construirInfoRenglon(
                     icon: Icons.calendar_today,
-                    label: 'Fecha de Creación',
-                    // Formateamos la fecha para que sea más legible
+                    label: 'Fecha de creación',
                     value: formatter.format(q.fechaCreacion),
                   ),
-                  // Mostramos la respuesta solo si no está vacía o es nula
                   if (q.respuestaAdmin != null && q.respuestaAdmin!.isNotEmpty)
                     _construirInfoRenglon(
                       icon: Icons.admin_panel_settings,
-                      label: 'Respuesta del Admin',
+                      label: 'Respuesta del admin',
                       value: q.respuestaAdmin!,
                     ),
-                  // Mostramos la fecha de atención solo si existe
                   if (q.fechaAtencion != null)
                     _construirInfoRenglon(
                       icon: Icons.event_available,
-                      label: 'Fecha de Atención',
+                      label: 'Fecha de atención',
                       value: formatter.format(q.fechaAtencion!),
                     ),
                 ],
@@ -162,7 +142,6 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
               child: Text('Cerrar'),
             ),
           ],
-          // Es una buena práctica redondear los bordes del AlertDialog también
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15.0),
           ),
@@ -199,7 +178,7 @@ class _VistaUsuarioQuejasState extends State<VistaUsuarioQuejas> {
                 Text(
                   value,
                   style: TextStyle(
-                    color: valueColor ?? Colors.black54, // Usa el color pasado o negro por defecto
+                    color: valueColor ?? Colors.black54,
                     fontSize: 15,
                   ),
                 ),

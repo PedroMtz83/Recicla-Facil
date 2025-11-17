@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:rf_sprint1/providers/auth_provider.dart';
 import 'package:rf_sprint1/providers/puntos_provider.dart';
 import 'package:rf_sprint1/providers/solicitudes_provider.dart';
-import 'package:rf_sprint1/views/contenido/contenido_screen.dart';
+import 'package:rf_sprint1/views/contenido/contenido_tabs_screen.dart';
 
 // Importa tus vistas y providers
 import 'package:rf_sprint1/views/perfil/perfilUsuario_screen.dart';
@@ -126,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 4.0,
         actions: [
           IconButton(
-            tooltip: 'Cerrar Sesión',
+            tooltip: 'Cerrar sesión',
             icon: Icon(Icons.logout),
             onPressed: () => _confirmarCerrarSesion(context),
           ),
@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.green,
               ),
               child: Text(
-                'Menú de Navegación',
+                'Menú de navegación',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -153,7 +153,8 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: Icon(Icons.person),
               title: Text('Usuario'),
               selected: _currentIndex == 0,
-              selectedTileColor: Colors.green.withOpacity(0.1), // Color de fondo cuando está seleccionado.
+              selectedTileColor: Colors.green.withOpacity(0.1),
+              selectedColor: Colors.green,
               onTap: () {
                 _onItemTapped(0);
               },
@@ -163,6 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text('Quejas y sugerencias'),
               selected: _currentIndex == 1,
               selectedTileColor: Colors.green.withOpacity(0.1),
+              selectedColor: Colors.green,
               onTap: () {
                 _onItemTapped(1);
               },
@@ -172,6 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text('Contenido educativo'),
               selected: _currentIndex == 2,
               selectedTileColor: Colors.green.withOpacity(0.1),
+              selectedColor: Colors.green,
               onTap: () {
                 _onItemTapped(2);
               },
@@ -181,6 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: Text('Puntos de reciclaje'),
               selected: _currentIndex == 3,
               selectedTileColor: Colors.green.withOpacity(0.1),
+              selectedColor: Colors.green,
               onTap: () {
                 _onItemTapped(3);
               },
@@ -195,27 +199,76 @@ class _HomeScreenState extends State<HomeScreen> {
   void _confirmarCerrarSesion(BuildContext context) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: Text('Cerrar Sesión'),
-          content: Text('¿Estás seguro de que quieres cerrar sesión?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-              },
-              child: Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
+          contentPadding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          clipBehavior: Clip.antiAlias,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Theme.of(context).primaryColor),
+                    SizedBox(width: 12),
+                    Text(
+                      'Cerrar sesión',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                _hacerCerrarSesion(context);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text('Cerrar sesión'),
-            ),
-          ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                child: Text(
+                  '¿Estás seguro de que quieres cerrar sesión?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16),
+                ),
+              ),
+
+              Padding(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                      },
+                      child: Text('Cancelar'),
+                      style: TextButton.styleFrom(
+                          foregroundColor: Colors.black
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(dialogContext).pop();
+                        _hacerCerrarSesion(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text('Cerrar sesión'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );

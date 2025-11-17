@@ -16,8 +16,8 @@ class SolicitudesPuntosScreen extends StatefulWidget {
 }
 
 class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
-
   bool _mostrarSoloPendientes = true;
+
 
   @override
   void initState() {
@@ -177,7 +177,7 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(16.0),
           child: Row(
             children: [
               Icon(Icons.info_outline, size: 16, color: Colors.blue),
@@ -207,7 +207,7 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -387,8 +387,15 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
   final _numeroController = TextEditingController();
   final _coloniaController = TextEditingController();
   final _telefonoController = TextEditingController();
-  final _horarioController = TextEditingController();
-
+  List <String> opcionesDias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  List <String> opcionesHora = ['8:00', '8:30', '9:00', '9:30', '10:00', '10:30', '11:00', '11:30', '12:00',
+    '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00',
+        '18:30', '19:00'];
+  String? diaSeleccionado1;
+  String? diaSeleccionado2;
+  String? horaSeleccionada1;
+  String? horaSeleccionada2;
+  String horario="";
   final SolicitudesPuntosService _solicitudesService = SolicitudesPuntosService();
   final GeocodingService _geocodingService = GeocodingService();
   
@@ -405,15 +412,33 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
   bool _geocodificandoPreview = false;
   bool _direccionValida = false;
 
+  List<String> getOpcionesDias2() {
+    if (diaSeleccionado1 == null) {
+      return [];
+    }
+    final int startIndex = opcionesDias.indexOf(diaSeleccionado1!);
+    return opcionesDias.sublist(startIndex + 1);
+  }
+
+  List<String> getOpcionesHoras2() {
+    if (horaSeleccionada1 == null) {
+      return [];
+    }
+    final int startIndex = opcionesHora.indexOf(horaSeleccionada1!);
+    return opcionesHora.sublist(startIndex + 1);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final List<String> opcionesDias2 = getOpcionesDias2();
+    final List<String> opcionesHoras2 = getOpcionesHoras2();
     return Scaffold(
       appBar: AppBar(
-        title: Text('Solicitar Nuevo Punto de Reciclaje'),
+        title: Text('Solicitar nuevo punto de reciclaje'),
         backgroundColor: Colors.green,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: ListView(
@@ -444,15 +469,135 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
                 label: 'Teléfono de contacto *',
                 hintText: 'Ej: 3111234567',
                 keyboardType: TextInputType.phone,
-                validator: (value) => value!.isEmpty ? 'Ingresa un teléfono de contacto' : null,
+                validator: (value) {
+                  if (value!.isEmpty) return 'Ingresa un teléfono de contacto';
+                  if (value.length < 10) {
+                    return 'El número de teléfono no puede ser menor a diez cifras';
+                  }
+                  if (value.length > 10) {
+                    return 'El número de teléfono no puede ser mayor a diez cifras';
+                  }
+                }
               ),
               SizedBox(height: 16),
-              _buildTextField(
-                controller: _horarioController,
-                label: 'Horario de atención *',
-                hintText: 'Ej: Lunes a Viernes 9:00-18:00, Sábados 9:00-14:00',
-                validator: (value) => value!.isEmpty ? 'Ingresa el horario de atención' : null,
+
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String?>(
+                      value: diaSeleccionado1,
+                      hint: Text("Día de inicio del horario:"),
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                        hintText: 'Seleccione un día de inicio del horario',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      items: opcionesDias.map((String dia1) {
+                        return DropdownMenuItem<String>(
+                          value: dia1,
+                          child: Text(dia1),
+                        );
+                      }).toList(),
+                      onChanged: (String? nuevoValor) {
+                        setState(() {
+                          diaSeleccionado1 = nuevoValor;
+                          diaSeleccionado2 = null;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Por favor, selecciona un día' : null,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: DropdownButtonFormField<String?>(
+                      value: diaSeleccionado2,
+                      hint: Text("Día de fin del horario"),
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                        hintText: 'Seleccione un día de fin del horario',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      items: opcionesDias2.map((String dia2) {
+                        return DropdownMenuItem<String>(
+                          value: dia2,
+                          child: Text(dia2),
+                        );
+                      }).toList(),
+                      onChanged: diaSeleccionado1 == null ? null : (String? nuevoValor) {
+                        setState(() {
+                          diaSeleccionado2 = nuevoValor;
+                        });
+                      },
+                      validator: (value) => value == null ? 'Por favor, selecciona día' : null,
+                    ),
+                  ),
+                ],
               ),
+                  SizedBox(height: 16),
+               Row(
+                 children: [
+                   Expanded(
+                     child: DropdownButtonFormField<String?>(
+                       value: horaSeleccionada1,
+                       hint: Text("Hora de inicio del horario:"),
+                       isExpanded: true,
+                       decoration: InputDecoration(
+                         contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                         hintText: 'Seleccione una hora de inicio del horario',
+                         border: OutlineInputBorder(
+                           borderRadius: BorderRadius.circular(8.0),
+                         ),
+                       ),
+                       items: opcionesHora.map((String hora1) {
+                         return DropdownMenuItem<String>(
+                           value: hora1,
+                           child: Text(hora1),
+                         );
+                       }).toList(),
+                       onChanged: (String? nuevoValor) {
+                         setState(() {
+                           horaSeleccionada1 = nuevoValor;
+                           horaSeleccionada2 = null;
+                         });
+                       },
+                       validator: (value) => value == null ? 'Por favor, selecciona una hora' : null,
+                     ),
+                   ),
+                   SizedBox(width: 16),
+                   Expanded(
+                     child: DropdownButtonFormField<String?>(
+                       value: horaSeleccionada2,
+                       hint: Text("Hora de fin del horario:"),
+                       isExpanded: true,
+                       decoration: InputDecoration(
+                         contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                         hintText: 'Seleccione una hora de fin del horario',
+                         border: OutlineInputBorder(
+                           borderRadius: BorderRadius.circular(8.0),
+                         ),
+                       ),
+                       items: opcionesHoras2.map((String hora2) {
+                         return DropdownMenuItem<String>(
+                           value: hora2,
+                           child: Text(hora2),
+                         );
+                       }).toList(),
+                       onChanged: horaSeleccionada1 == null ? null : (String? nuevoValor) {
+                         setState(() {
+                           horaSeleccionada2 = nuevoValor;
+                         });
+                       },
+                       validator: (value) => value == null ? 'Por favor, selecciona una hora' : null,
+                     ),
+                   ),
+                 ],
+               ),
               SizedBox(height: 24),
               _buildSubmitButton(),
             ],
@@ -837,7 +982,7 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
     );
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+    horario = '${diaSeleccionado1} a ${diaSeleccionado2} : ${horaSeleccionada1} - ${horaSeleccionada2}';
     final solicitud = SolicitudPunto(
       id: '',
       nombre: _nombreController.text,
@@ -845,7 +990,7 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
       direccion: direccion,
       tipoMaterial: _tiposSeleccionados,
       telefono: _telefonoController.text,
-      horario: _horarioController.text,
+      horario: horario,
       usuarioSolicitante: authProvider.userName!, // Usar el nombre real del usuario
       estado: 'pendiente',
       fechaCreacion: DateTime.now(),
@@ -901,7 +1046,6 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
     _numeroController.dispose();
     _coloniaController.dispose();
     _telefonoController.dispose();
-    _horarioController.dispose();
     super.dispose();
   }
 }

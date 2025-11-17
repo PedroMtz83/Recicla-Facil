@@ -24,7 +24,7 @@ class GestionQuejasScreen extends StatelessWidget {
               padding: EdgeInsets.only(right: 16.0),
               child: Chip(
                 label: Text('Admin', style: TextStyle(color: Colors.white)),
-                backgroundColor: Colors.blueAccent,
+                backgroundColor: Colors.green,
               ),
             )
         ],

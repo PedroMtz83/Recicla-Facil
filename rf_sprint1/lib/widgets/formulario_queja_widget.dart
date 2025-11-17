@@ -15,11 +15,11 @@ import '../services/queja_service.dart';
       final _mensajeController = TextEditingController();
       // --- PASO 1: Añadir controlador para el correo ---
       final List<String> categorias = [
-        'Sugerencia / Nueva Funcionalidad',
+        'Sugerencia / Nueva funcionalidad',
         'Duda',
-        'Reporte de Falla Técnica (Error)',
-        'Diseño y Facilidad de Uso',
-        'Información sobre Reciclaje',
+        'Reporte de falla técnica (error)',
+        'Diseño y facilidad de uso',
+        'Información sobre reciclaje',
         'Cuenta / Perfil',
         'Otro',
       ];

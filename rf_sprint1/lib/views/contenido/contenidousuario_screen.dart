@@ -147,7 +147,7 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
               ),
               DropdownMenuItem(
                 value: TipoBusqueda.porTipoMaterial,
-                child: Text('Tipo de Material'),
+                child: Text('Tipo de material'),
               ),
             ],
             onChanged: (value) {

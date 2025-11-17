@@ -41,11 +41,11 @@ class _QuejasTabsScreenState extends State<QuejasTabsScreen> {
         items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.edit_document),
-            label: 'Enviar Mensaje',
+            label: 'Enviar mensaje',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.view_list),
-            label: authProvider.isAdmin ? 'Gestionar Quejas' : 'Mis Mensajes',
+            label: authProvider.isAdmin ? 'Gestionar quejas' : 'Mis mensajes',
           ),
         ],
 
