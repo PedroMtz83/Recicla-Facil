@@ -79,12 +79,16 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.black,
+            ),
             child: Text('Cancelar'),
           ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            icon:  Icon(Icons.warning),
+            label:  Text('Sí, eliminar'),
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Eliminar'),
           ),
         ],
       ),

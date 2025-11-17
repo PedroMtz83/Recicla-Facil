@@ -160,35 +160,37 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
           ),
           SizedBox(height: 12),
 
-          TextField(
-            controller: _busquedaController,
-            decoration: InputDecoration(
-              labelText: 'Escriba un valor.',
-              hintText: 'Ingrese un dato para realizar la búsqueda con base a ello',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.0),
+          Row(
+            spacing: 4,
+            children: [
+          Expanded(
+            child: TextField(
+              controller: _busquedaController,
+              decoration: InputDecoration(
+                labelText: 'Escriba un valor.',
+                hintText: 'Ingrese un dato para realizar la búsqueda con base a ello',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    _busquedaController.clear();
+                    setState(() {
+                      _contenidosFuture = _cargarContenido();
+                    });
+                  },
+                ),
               ),
-              suffixIcon: IconButton(
-                icon: Icon(Icons.clear),
-                onPressed: () {
-                  _busquedaController.clear();
-                  setState(() {
-                    _contenidosFuture = _cargarContenido();
-                  });
-                },
-              ),
+              onSubmitted: (_) {
+                setState(() {
+                  _contenidosFuture = _cargarContenido();
+                });
+              },
             ),
-            onSubmitted: (_) {
-              setState(() {
-                _contenidosFuture = _cargarContenido();
-              });
-            },
           ),
           SizedBox(height: 12),
-
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
+             ElevatedButton.icon(
               icon: Icon(Icons.search),
               label: Text('Buscar'),
               onPressed: (){
@@ -197,12 +199,13 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
                 });
               },
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 12.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                  vertical: 16, horizontal: 20),
               ),
             ),
+            ]
           ),
         ],
       ),
@@ -283,7 +286,7 @@ class _ContenidoUsuarioScreenState extends State<ContenidoUsuarioScreen> {
                   Divider(thickness: 1),
                   SizedBox(height: 8.0),
                   Text(
-                    "Puntos Clave",
+                    "Puntos clave",
                     style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold, color: Colors.grey[800]),
                   ),
                   SizedBox(height: 8.0),

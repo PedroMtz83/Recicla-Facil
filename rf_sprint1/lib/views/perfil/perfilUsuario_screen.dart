@@ -259,75 +259,147 @@ class _VistaPerfilState extends State<VistaPerfil> {
   void _showChangePasswordDialog(BuildContext context) {
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    bool newPasswordVisible = false;
+    bool confirmPasswordVisible = false;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Cambiar contraseña'),
-          content: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.9,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextFormField(
-                    controller: newPasswordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                        labelText: 'Contraseña nueva: ',
-                        border: OutlineInputBorder(),
-                        hintText: 'Escriba una contraseña nueva: '
-                    ),
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return 'Campo requerido';
-                      if (val.length < 6) return 'Debe tener al menos 6 caracteres';
-                      return null;
-                    },
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              contentPadding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
+              clipBehavior: Clip.antiAlias,
+              content: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        color: Theme.of(context).primaryColor.withOpacity(0.1),
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        child: Row(
+                          children: [
+                            Icon(Icons.password, color: Theme.of(context).primaryColor),
+                            SizedBox(width: 12),
+                            Text(
+                              'Cambiar contraseña',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextFormField(
+                              controller: newPasswordController,
+                              obscureText: !newPasswordVisible,
+                              decoration: InputDecoration(
+                                labelText: 'Contraseña nueva',
+                                prefixIcon: Icon(Icons.lock_outline),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    newPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    setDialogState(() => newPasswordVisible = !newPasswordVisible);
+                                  },
+                                ),
+                              ),
+                              validator: (val) {
+                                if (val == null || val.isEmpty) return 'Campo requerido';
+                                if (val.length < 6) return 'Debe tener al menos 6 caracteres';
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16),
+
+                            TextFormField(
+                              controller: confirmPasswordController,
+                              obscureText: !confirmPasswordVisible,
+                              decoration: InputDecoration(
+                                labelText: 'Confirmar contraseña',
+                                prefixIcon: Icon(Icons.lock_person_outlined),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    confirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                    color: Colors.grey,
+                                  ),
+                                  onPressed: () {
+                                    setDialogState(() => confirmPasswordVisible = !confirmPasswordVisible);
+                                  },
+                                ),
+                              ),
+                              validator: (val) {
+                                if (val == null || val.isEmpty) return 'Campo requerido';
+                                if (val != newPasswordController.text) return 'Las contraseñas no coinciden';
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogContext).pop(),
+                              child: Text('Cancelar'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.black,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            ElevatedButton(
+                              child: Text('Guardar'),
+
+                              onPressed: () {
+                                if (formKey.currentState?.validate() ?? false) {
+                                  if (widget.userEmail != null) {
+                                    _changePassword(context, newPasswordController.text);
+                                  }
+                                  Navigator.of(dialogContext).pop();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: confirmPasswordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Confirmar contraseña nueva: ',
-                      border: OutlineInputBorder(),
-                      hintText: 'Vuelva a escribir la contraseña nueva: '
-                    ),
-                    validator: (val) {
-                      if (val == null || val.isEmpty) return 'Campo requerido';
-                      if (val != newPasswordController.text) return 'Las contraseñas no coinciden';
-                      return null;
-                    },
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancelar'),
-              style: ElevatedButton.styleFrom(
-               foregroundColor: Colors.black,
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                  if (widget.userEmail != null) {
-                    _changePassword(context, newPasswordController.text);
-                  }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.black,
-                disabledBackgroundColor: Colors.green.shade200,
-              ),
-              child: Text('Guardar'),
-            ),
-          ],
+            );
+          },
         );
       },
     );
@@ -564,12 +636,12 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Acción no permitida'),
-          content: const Text('No puedes eliminar tu propia cuenta de usuario desde esta pantalla.'),
+          title: Text('Acción no permitida'),
+          content: Text('No puedes eliminar tu propia cuenta de usuario desde esta pantalla.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Entendido'),
+              child: Text('Entendido'),
             ),
           ],
         ),
@@ -636,21 +708,16 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
       builder: (dialogContext) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            // --- DIÁLOGO VISUALMENTE MEJORADO ---
             return AlertDialog(
-              // Eliminamos el padding por defecto para controlar el diseño
               contentPadding: EdgeInsets.zero,
-              // Bordes redondeados para el diálogo
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(15.0),
               ),
-              // Clip para que el contenido respete los bordes redondeados
               clipBehavior: Clip.antiAlias,
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // --- ENCABEZADO DEL DIÁLOGO ---
                     Container(
                       width: double.infinity,
                       color: Theme.of(context).primaryColor.withOpacity(0.1),
@@ -670,13 +737,11 @@ class _VistaConsultarUsuarioState extends State<VistaConsultarUsuario> {
                       ),
                     ),
 
-                    // --- FORMULARIO ---
                     Padding(
                       padding: EdgeInsets.all(20.0),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // --- TEXTFIELD DE NOMBRE MEJORADO ---
                           TextFormField(
                             controller: nombreController,
                             decoration: InputDecoration(

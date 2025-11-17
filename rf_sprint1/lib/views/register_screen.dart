@@ -302,7 +302,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Enlace para volver al login
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          Navigator.pushReplacementNamed(context, '/login');
                         },
                         child: Text(
                           '¿Ya tienes una cuenta? Inicia sesión',

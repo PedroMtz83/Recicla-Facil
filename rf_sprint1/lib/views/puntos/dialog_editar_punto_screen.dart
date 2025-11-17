@@ -99,60 +99,131 @@ class _DialogoEditarPuntoState extends State<DialogoEditarPunto> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Editar Punto de Reciclaje'),
-      // Usamos SingleChildScrollView para evitar desbordamiento si el teclado aparece.
+      contentPadding: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
+      ),
+      clipBehavior: Clip.antiAlias,
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextFormField(
-                controller: _nombreController,
-                decoration: const InputDecoration(labelText: 'Nombre'),
-                validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+              Container(
+                width: double.infinity,
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_location_alt_outlined, color: Theme.of(context).primaryColor),
+                    SizedBox(width: 12),
+                    Text(
+                      'Editar punto de reciclaje',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              TextFormField(
-                controller: _descripcionController,
-                decoration: const InputDecoration(labelText: 'Descripción'),
-                maxLines: 2,
-                validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+
+              Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _nombreController,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre *',
+                        prefixIcon: Icon(Icons.business_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descripcionController,
+                      decoration: InputDecoration(
+                        labelText: 'Descripción *',
+                        prefixIcon: Icon(Icons.description_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      maxLines: 2,
+                      validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+                    ),
+                    SizedBox(height: 16),
+                    _buildMaterialSelector(), // El selector de materiales se mantiene.
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _telefonoController,
+                      decoration: InputDecoration(
+                        labelText: 'Teléfono *',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: _horarioController,
+                      decoration: InputDecoration(
+                        labelText: 'Horario *',
+                        prefixIcon: Icon(Icons.access_time_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+                    ),
+                  ],
+                ),
               ),
-              SizedBox(height: 16),
-              _buildMaterialSelector(),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _telefonoController,
-                decoration: const InputDecoration(labelText: 'Teléfono'),
-                keyboardType: TextInputType.phone,
-                validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
-              ),
-              TextFormField(
-                controller: _horarioController,
-                decoration: const InputDecoration(labelText: 'Horario'),
-                validator: (value) => (value?.isEmpty ?? true) ? 'Este campo es obligatorio' : null,
+
+              Padding(
+                padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: _estaCargando ? null : () => Navigator.of(context).pop(),
+                      child: Text('Cancelar'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.black,
+                      ),
+                      onPressed: _estaCargando ? null : _submitForm,
+                      child: _estaCargando
+                          ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                          : Text('Actualizar'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _estaCargando ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        // El botón de "Actualizar" muestra un indicador de carga si está procesando.
-        ElevatedButton(
-          onPressed: _estaCargando ? null : _submitForm,
-          child: _estaCargando
-              ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-          )
-              : const Text('Actualizar'),
-        ),
-      ],
     );
   }
 

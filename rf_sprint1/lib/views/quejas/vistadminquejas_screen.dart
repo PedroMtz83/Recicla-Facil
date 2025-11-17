@@ -62,106 +62,142 @@ class _VistaAdminQuejasState extends State<VistaAdminQuejas> {
 
     showDialog(
       context: context,
-      builder: (ctx) {
-        return Center(
-          child: SizedBox(
-            // Usamos un ancho ligeramente menor para pantallas muy pequeñas
-            width: MediaQuery.of(context).size.width.clamp(300.0, 500.0),
-            child: AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              title: Text('Atender Queja'),
-              contentPadding: EdgeInsets.only(top: 20.0), // Padding solo arriba
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
 
-              content: Card(
-                elevation: 0,
-                margin: EdgeInsets.zero,
-                color: Colors.transparent,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- INFORMACIÓN DE CONTEXTO AÑADIDA ---
-                      _construirInfoSoloLectura(
-                        icon: Icons.calendar_today,
-                        label: 'Fecha de Creación',
-                        value: formato.format(queja.fechaCreacion),
-                      ),
-                      SizedBox(height: 12),
-                      _construirInfoSoloLectura(
-                        icon: Icons.message,
-                        label: 'Mensaje del Usuario',
-                        value: queja.mensaje,
-                      ),
-                      Divider(height: 32, thickness: 0.8), // Separador visual
-
-                      // --- FORMULARIO PARA LA RESPUESTA ---
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Form(
-                          key: formKey,
-                          child: TextFormField(
-                            controller: respuestaController,
-                            decoration: InputDecoration(
-                              labelText: 'Tu Respuesta',
-                              hintText: 'Escribe aquí tu respuesta...',
-                              border: OutlineInputBorder(),
-                            ),
-                            maxLines: 4,
-                            autofocus: true,
-                            validator: (value) => value == null || value.trim().isEmpty
-                                ? 'La respuesta no puede estar vacía'
-                                : null,
+          contentPadding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15.0),
+          ),
+          clipBehavior: Clip.antiAlias,
+          content: SingleChildScrollView(
+            child: Form( // Envolvemos todo en un Form para la validación
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: double.infinity,
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.question_answer_outlined, color: Theme.of(context).primaryColor),
+                        SizedBox(width: 12),
+                        Text(
+                          'Atender Queja',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                      SizedBox(height: 24), // Espacio al final del contenido
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Detalles de la queja:',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                        ),
+                        SizedBox(height: 12),
+                        _construirInfoSoloLectura(
+                          icon: Icons.calendar_today,
+                          label: 'Fecha de creación',
+                          value: formato.format(queja.fechaCreacion),
+                        ),
+                        SizedBox(height: 12),
+                        _construirInfoSoloLectura(
+                          icon: Icons.message,
+                          label: 'Mensaje del usuario',
+                          value: queja.mensaje,
+                        ),
+                        Divider(height: 24, thickness: 0.8),
+
+                        TextFormField(
+                          controller: respuestaController,
+                          decoration: InputDecoration(
+                            labelText: 'Tu Respuesta *',
+                            hintText: 'Escribe aquí la respuesta para el usuario...',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            prefixIcon: Icon(Icons.edit_note),
+                          ),
+                          maxLines: 4,
+                          autofocus: true,
+                          validator: (value) => value == null || value.trim().isEmpty
+                              ? 'La respuesta no puede estar vacía'
+                              : null,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: Text('Cancelar'),
+                          style: TextButton.styleFrom(
+
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          child: Text('Enviar Respuesta'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.black,
+                          ),
+                          onPressed: () async {
+                            if (formKey.currentState!.validate()) {
+                              if (_isActionLoading) return;
+                              setState(() => _isActionLoading = true);
+                              Navigator.of(dialogContext).pop();
+
+                              try {
+                                final resultado = await _quejaService.atenderQueja(
+                                    queja.id, respuestaController.text);
+                                if (mounted) {
+                                  if (resultado['statusCode'] == 200) {
+                                    _mostrarSnackBar('Queja atendida correctamente.');
+                                    _recargarQuejas();
+                                  } else {
+                                    _mostrarSnackBar(
+                                        resultado['mensaje'] ?? 'Error al atender la queja.',
+                                        esError: true);
+                                  }
+                                }
+                              } catch (e) {
+                                if (mounted) _mostrarSnackBar(e.toString(), esError: true);
+                              } finally {
+                                if (mounted) setState(() => _isActionLoading = false);
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text('Cancelar'),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    if (formKey.currentState!.validate()) {
-                      // ... (El resto de tu lógica de onPressed no necesita cambios)
-                      if (_isActionLoading) return;
-                      setState(() => _isActionLoading = true);
-                      Navigator.of(ctx).pop();
-                      try {
-                        final resultado = await _quejaService.atenderQueja(
-                            queja.id, // Usamos el id del objeto queja
-                            respuestaController.text);
-                        if (mounted) {
-                          if (resultado['statusCode'] == 200) {
-                            _mostrarSnackBar('Queja atendida correctamente.');
-                            _recargarQuejas();
-                          } else {
-                            _mostrarSnackBar(resultado['mensaje'] ?? 'Error al atender la queja.', esError: true);
-                          }
-                        }
-                      } catch (e) {
-                        if (mounted) _mostrarSnackBar(e.toString(), esError: true);
-                      } finally {
-                        if (mounted) setState(() => _isActionLoading = false);
-                      }
-                    }
-                  },
-                  child: Text('Enviar'),
-                ),
-              ],
             ),
           ),
         );
       },
     );
   }
+
   Widget _construirInfoSoloLectura({
     required IconData icon,
     required String label,
