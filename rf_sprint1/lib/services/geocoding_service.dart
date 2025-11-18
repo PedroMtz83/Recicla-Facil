@@ -1,6 +1,7 @@
 // lib/services/geocoding_service.dart
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -85,6 +86,15 @@ class GeocodingService {
     // Se "asigna" la IP de desarrollo configurada manualmente.
     return 'http://$_direccionIpLocal:3000/api';
   }
+  // Cache local para reverse geocoding: key = hash(lat,lon), value = {result, timestamp}
+  final Map<String, Map<String, dynamic>> _reverseCache = {};
+  static const Duration _reverseCacheTtl = Duration(hours: 48);
+
+  String _hashCoords(double lat, double lon) {
+    final latR = (lat * 100000).round();
+    final lonR = (lon * 100000).round();
+    return '$latR|$lonR';
+  }
   /// Obtiene las coordenadas de una dirección para vista previa
   /// No requiere autenticación (endpoint público)
   Future<UbicacionPreview> obtenerUbicacionPreview({
@@ -132,9 +142,23 @@ class GeocodingService {
     required double latitud,
     required double longitud,
   }) async {
+    final key = _hashCoords(latitud, longitud);
+    // Return from cache if available and fresh
+    final cached = _reverseCache[key];
+    if (cached != null) {
+      final ts = cached['ts'] as DateTime;
+      if (DateTime.now().difference(ts) <= _reverseCacheTtl) {
+        try {
+          return DireccionDesdeCoordenas.fromJson(Map<String, dynamic>.from(cached['data']));
+        } catch (_) {}
+      } else {
+        _reverseCache.remove(key);
+      }
+    }
+
     try {
       print('GeocodingService: Llamando a reverse-geocode para Lat: $latitud, Lon: $longitud');
-      final response = await http.post(
+      final future = http.post(
         Uri.parse('$_apiRoot/reverse-geocode'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -143,11 +167,57 @@ class GeocodingService {
         }),
       );
 
+      // Evitar esperas largas: timeout de 5s
+      final response = await future.timeout(Duration(seconds: 5));
+
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         print('GeocodingService: Respuesta exitosa: ${data['data']}');
-        final resultado = DireccionDesdeCoordenas.fromJson(data['data']);
-        print('GeocodingService: Dirección parseada - Calle: ${resultado.calle}, Colonia: ${resultado.colonia}');
+
+        // Parse inicial
+        final raw = Map<String, dynamic>.from(data['data'] ?? {});
+        DireccionDesdeCoordenas resultado = DireccionDesdeCoordenas.fromJson(raw);
+
+        // Si no viene número, intentar extraerlo desde el campo 'direccion' (display_name)
+        final numeroActual = (resultado.numero ?? '').toString().trim();
+        if (numeroActual.isEmpty) {
+          final display = (raw['direccion'] ?? raw['displayName'] ?? '').toString();
+          // Patrones comunes: "No. 123", "#123", "Número 123" o primer token numérico
+          final pat1 = RegExp(r'(?:No\.?|Número|Numero|Num|Nº|#)\s*([0-9A-Za-z\-]+)', caseSensitive: false);
+          final m1 = pat1.firstMatch(display);
+          String? numeroExtra;
+          if (m1 != null) {
+            numeroExtra = m1.group(1);
+          } else {
+            final pat2 = RegExp(r'\b(\d{1,6}[A-Za-z\-]?)\b');
+            final m2 = pat2.firstMatch(display);
+            if (m2 != null) numeroExtra = m2.group(1);
+          }
+
+          if (numeroExtra != null && numeroExtra.trim().isNotEmpty) {
+            // Reconstruir el objeto con el número extraído
+            resultado = DireccionDesdeCoordenas(
+              calle: resultado.calle,
+              numero: numeroExtra,
+              colonia: resultado.colonia,
+              ciudad: resultado.ciudad,
+              estado: resultado.estado,
+              direccion: resultado.direccion,
+            );
+            // Actualizar raw para cache
+            try {
+              raw['numero'] = numeroExtra;
+            } catch (_) {}
+            print('GeocodingService: Número extraído desde display_name: $numeroExtra');
+          }
+        }
+
+        // Guardar en cache (raw map)
+        try {
+          _reverseCache[key] = {'data': Map<String, dynamic>.from(raw), 'ts': DateTime.now()};
+        } catch (_) {}
+
+        print('GeocodingService: Dirección parseada - Calle: ${resultado.calle}, Colonia: ${resultado.colonia}, Numero: ${resultado.numero}');
         return resultado;
       } else {
         print('GeocodingService: Error HTTP ${response.statusCode}: ${response.body}');

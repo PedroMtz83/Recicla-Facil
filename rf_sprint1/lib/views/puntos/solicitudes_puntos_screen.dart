@@ -647,7 +647,6 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
           label: 'Calle',
           hintText: 'Ej: Avenida México',
           validator: (value) => value!.isEmpty ? 'Ingresa la calle' : null,
-          onChanged: (_) => _validarDireccion(),
         ),
         SizedBox(height: 12),
         Row(
@@ -660,7 +659,6 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
                 hintText: 'Ej: 123',
                 keyboardType: TextInputType.text,
                 validator: (value) => value!.isEmpty ? 'Ingresa el número' : null,
-                onChanged: (_) => _validarDireccion(),
               ),
             ),
             SizedBox(width: 16),
@@ -671,7 +669,6 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
                 label: 'Colonia',
                 hintText: 'Ej: Centro',
                 validator: (value) => value!.isEmpty ? 'Ingresa la colonia' : null,
-                onChanged: (_) => _validarDireccion(),
               ),
             ),
           ],
@@ -704,64 +701,109 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
   }
 
   Widget _buildPreviewSection() {
+    final calle = _calleController.text.trim();
+    final numero = _numeroController.text.trim();
+    final colonia = _coloniaController.text.trim();
+    final puedeValidar = calle.isNotEmpty && numero.isNotEmpty && colonia.isNotEmpty;
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _direccionValida ? Colors.green[50] : Colors.amber[50],
+        color: _direccionValida ? Colors.green[50] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: _direccionValida ? Colors.green[300]! : Colors.amber[300]!,
+          color: _direccionValida ? Colors.green[300]! : Colors.grey[300]!,
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              if (_geocodificandoPreview)
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else if (_direccionValida)
-                Icon(Icons.check_circle, color: Colors.green, size: 24)
-              else
-                Icon(Icons.warning_amber, color: Colors.amber[700], size: 24),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _geocodificandoPreview
-                      ? 'Verificando dirección...'
-                      : _direccionValida
-                          ? 'Dirección geocodificada correctamente'
-                          : 'Completa la dirección para ver vista previa',
-                  style: TextStyle(
-                    color: _geocodificandoPreview
-                        ? Colors.grey[600]
-                        : _direccionValida
-                            ? Colors.green[700]
-                            : Colors.amber[700],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
+          // Botón para buscar dirección
+          ElevatedButton.icon(
+            onPressed: puedeValidar && !_geocodificandoPreview
+                ? _buscarDireccion
+                : null,
+            icon: _geocodificandoPreview
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(Icons.search),
+            label: Text(
+              _geocodificandoPreview ? 'Buscando...' : 'Buscar Dirección',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              disabledBackgroundColor: Colors.grey[400],
+              minimumSize: Size(double.maxFinite, 40),
+            ),
           ),
-          if (_ubicacionPreview != null && _direccionValida) ...[
+          if (_geocodificandoPreview) ...[
             SizedBox(height: 12),
             Text(
-              'Lat: ${_ubicacionPreview!.latitud.toStringAsFixed(4)}, '
-              'Lon: ${_ubicacionPreview!.longitud.toStringAsFixed(4)}',
-              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+              'Verificando dirección...',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
             ),
+          ],
+          if (_ubicacionPreview != null && _direccionValida) ...[
             SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: _mostrarMapaPreview,
-              icon: Icon(Icons.map),
-              label: Text('Ver en Mapa'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                minimumSize: Size(double.maxFinite, 40),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.green[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Dirección geocodificada correctamente',
+                        style: TextStyle(
+                          color: Colors.green[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Lat: ${_ubicacionPreview!.latitud.toStringAsFixed(4)}, '
+                    'Lon: ${_ubicacionPreview!.longitud.toStringAsFixed(4)}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  ),
+                  SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: _mostrarMapaPreview,
+                    icon: Icon(Icons.map, color: Colors.white),
+                    label: Text(
+                      'Ajustar en Mapa',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      minimumSize: Size(double.maxFinite, 36),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else if (!_geocodificandoPreview && !puedeValidar) ...[
+            SizedBox(height: 8),
+            Text(
+              'Completa los campos: Calle, Número y Colonia',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 13,
               ),
             ),
           ],
@@ -770,7 +812,7 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
     );
   }
 
-  void _validarDireccion() async {
+  void _buscarDireccion() async {
     final calle = _calleController.text.trim();
     final numero = _numeroController.text.trim();
     final colonia = _coloniaController.text.trim();
@@ -780,6 +822,12 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
         _direccionValida = false;
         _ubicacionPreview = null;
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Por favor completa: Calle, Número y Colonia'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -799,11 +847,26 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
         _direccionValida = true;
         _geocodificandoPreview = false;
       });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Dirección encontrada. Puedes ajustarla en el mapa si lo deseas.'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       print('Error al geocodificar: $e');
       setState(() {
         _geocodificandoPreview = false;
+        _direccionValida = false;
       });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al buscar la dirección: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -957,7 +1020,7 @@ class _NuevaSolicitudPuntoScreenState extends State<NuevaSolicitudPuntoScreen> {
             ),
             child: Text(
               'Enviar Solicitud',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           );
   }

@@ -23,6 +23,19 @@ const PUNTOS_REFERENCIA_TEPIC = {
     'ayuntamiento': { latitud: 21.5018, longitud: -104.8950 }
 };
 
+// Normaliza texto: elimina diacríticos (acentos), colapsa espacios y recorta
+function normalizeTexto(s) {
+    if (!s && s !== '') return s;
+    try {
+        return String(s)
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    } catch (e) {
+        return s;
+    }
+}
 function validarDireccion(direccion) {
     if (!direccion) return false;
     const { calle, numero, colonia } = direccion;
@@ -34,7 +47,7 @@ async function geocodificarConNominatim(query, reintentos = 0, bbox) {
     
     try {
         const params = {
-            q: query,
+            q: normalizeTexto(query),
             format: 'json',
             limit: 5,
             timeout: 5000,
@@ -47,7 +60,7 @@ async function geocodificarConNominatim(query, reintentos = 0, bbox) {
             params.bounded = 1;
         }
 
-        console.log(`  Nominatim query: "${query}"${bbox ? ' (con bbox)' : ''}`);
+        console.log(`  Nominatim query: "${query}" -> normalized: "${normalizeTexto(query)}" ${bbox ? ' (con bbox)' : ''}`);
         
         const response = await axios.get('https://nominatim.openstreetmap.org/search', {
             params,
@@ -112,15 +125,22 @@ function estaDentroDeBBox(lat, lon, bbox) {
 
 async function geocodificarDireccion(calle, numero, colonia, ciudad = 'Tepic', estado = 'Nayarit', pais = 'México') {
     try {
-        if (!calle || !numero || !colonia) {
+        // Normalizar entradas para que no se distinga entre acentos
+        const calleNorm = normalizeTexto(calle || '');
+        const numeroNorm = normalizeTexto(numero || '');
+        const coloniaNorm = normalizeTexto(colonia || '');
+        const ciudadNorm = normalizeTexto(ciudad || 'Tepic');
+        const estadoNorm = normalizeTexto(estado || 'Nayarit');
+        const paisNorm = normalizeTexto(pais || 'México');
+
+        if (!calleNorm || !numeroNorm || !coloniaNorm) {
             console.warn('Dirección incompleta. Usando coordenadas por defecto de Tepic.');
             return TEPIC_DEFAULT;
         }
-        
-        const direccionCompleta = `${calle} ${numero}, ${colonia}, ${ciudad}, ${estado}, ${pais}`;
+        const direccionCompleta = `${calleNorm} ${numeroNorm}, ${coloniaNorm}, ${ciudadNorm}, ${estadoNorm}, ${paisNorm}`;
         console.log(`Geocodificando: ${direccionCompleta}`);
-        
-        const usarBBox = ciudad && ciudad.toLowerCase() === 'tepic';
+
+        const usarBBox = ciudadNorm && ciudadNorm.toLowerCase() === 'tepic';
         let resultado = await geocodificarConNominatim(direccionCompleta, 0, usarBBox ? TEPIC_BBOX : null);
 
         if (resultado) {
@@ -132,7 +152,7 @@ async function geocodificarDireccion(calle, numero, colonia, ciudad = 'Tepic', e
             }
         }
         
-        const busqueda2 = `${calle}, ${colonia}, ${ciudad}, ${estado}, ${pais}`;
+        const busqueda2 = `${calleNorm}, ${coloniaNorm}, ${ciudadNorm}, ${estadoNorm}, ${paisNorm}`;
         resultado = await geocodificarConNominatim(busqueda2, 0, usarBBox ? TEPIC_BBOX : null);
         
         if (resultado) {
@@ -144,7 +164,7 @@ async function geocodificarDireccion(calle, numero, colonia, ciudad = 'Tepic', e
             }
         }
         
-        const busqueda3 = `${colonia}, ${ciudad}, ${estado}, ${pais}`;
+        const busqueda3 = `${coloniaNorm}, ${ciudadNorm}, ${estadoNorm}, ${paisNorm}`;
         resultado = await geocodificarConNominatim(busqueda3, 0, usarBBox ? TEPIC_BBOX : null);
         
         if (resultado) {
@@ -156,8 +176,8 @@ async function geocodificarDireccion(calle, numero, colonia, ciudad = 'Tepic', e
             }
         }
         
-        if (ciudad.toLowerCase() === 'tepic') {
-            const palabrasClave = `${calle} ${colonia}`.toLowerCase();
+        if (ciudadNorm.toLowerCase() === 'tepic') {
+            const palabrasClave = `${calleNorm} ${coloniaNorm}`.toLowerCase();
             for (const [lugar, coords] of Object.entries(PUNTOS_REFERENCIA_TEPIC)) {
                 if (palabrasClave.includes(lugar)) {
                     console.log(`Geocodificación por punto de referencia (${lugar}): Lat ${coords.latitud}, Lon ${coords.longitud}`);
@@ -290,6 +310,7 @@ module.exports = {
     geocodificarParaPreview,
     validarDireccion,
     obtenerDireccionDesdeCoordenas,
+    normalizeTexto,
     TEPIC_DEFAULT,
     TEPIC_BBOX,
     estaDentroDeBBox

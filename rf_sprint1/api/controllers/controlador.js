@@ -1037,7 +1037,7 @@ exports.eliminarPuntoReciclaje = async (req, res) => {
 // =========================================================================
 
 const { SolicitudPunto, PuntosReciclaje } = require('../models/modelos');
-const { geocodificarDireccion, obtenerDireccionDesdeCoordenas, TEPIC_BBOX, estaDentroDeBBox } = require('../services/geocoding');
+const { geocodificarDireccion, obtenerDireccionDesdeCoordenas, TEPIC_BBOX, estaDentroDeBBox, normalizeTexto } = require('../services/geocoding');
 
 // @desc    Crear una nueva solicitud de punto de reciclaje
 // @route   POST /api/solicitudes-puntos
@@ -1079,13 +1079,20 @@ exports.crearSolicitudPunto = async (req, res) => {
 
         // Si no tenemos coordenadas válidas aun, geocodificamos
         if (latitudFinal === null || longitudFinal === null) {
+            const calleNorm = normalizeTexto(direccion.calle || '');
+            const numeroNorm = normalizeTexto(direccion.numero || '');
+            const coloniaNorm = normalizeTexto(direccion.colonia || '');
+            const ciudadNorm = normalizeTexto(direccion.ciudad || 'Tepic');
+            const estadoNorm = normalizeTexto(direccion.estado || 'Nayarit');
+            const paisNorm = normalizeTexto(direccion.pais || 'México');
+
             const coordenadas = await geocodificarDireccion(
-                direccion.calle,
-                direccion.numero,
-                direccion.colonia,
-                direccion.ciudad || 'Tepic',
-                direccion.estado || 'Nayarit',
-                direccion.pais || 'México'
+                calleNorm,
+                numeroNorm,
+                coloniaNorm,
+                ciudadNorm,
+                estadoNorm,
+                paisNorm
             );
             latitudFinal = coordenadas.latitud;
             longitudFinal = coordenadas.longitud;
@@ -1228,13 +1235,20 @@ exports.aprobarSolicitudPunto = async (req, res) => {
 
         // 2. Crear el punto de reciclaje
         // Obtener coordenadas por geocodificación
+        const calleNorm = normalizeTexto(solicitud.direccion.calle || '');
+        const numeroNorm = normalizeTexto(solicitud.direccion.numero || '');
+        const coloniaNorm = normalizeTexto(solicitud.direccion.colonia || '');
+        const ciudadNorm = normalizeTexto(solicitud.direccion.ciudad || 'Tepic');
+        const estadoNorm = normalizeTexto(solicitud.direccion.estado || 'Nayarit');
+        const paisNorm = normalizeTexto(solicitud.direccion.pais || 'México');
+
         const coordenadas = await geocodificarDireccion(
-            solicitud.direccion.calle,
-            solicitud.direccion.numero,
-            solicitud.direccion.colonia,
-            solicitud.direccion.ciudad,
-            solicitud.direccion.estado,
-            solicitud.direccion.pais
+            calleNorm,
+            numeroNorm,
+            coloniaNorm,
+            ciudadNorm,
+            estadoNorm,
+            paisNorm
         );
         
         const direccionCompleta = `${solicitud.direccion.calle} ${solicitud.direccion.numero}, ${solicitud.direccion.colonia}, ${solicitud.direccion.ciudad}, ${solicitud.direccion.estado}`;
@@ -1490,7 +1504,14 @@ exports.geocodificarPreview = async (req, res) => {
             });
         }
 
-        const ubicacion = await geocodificarDireccion(calle, numero, colonia, ciudad, estado, pais);
+        const calleNorm = normalizeTexto(calle || '');
+        const numeroNorm = normalizeTexto(numero || '');
+        const coloniaNorm = normalizeTexto(colonia || '');
+        const ciudadNorm = normalizeTexto(ciudad || 'Tepic');
+        const estadoNorm = normalizeTexto(estado || 'Nayarit');
+        const paisNorm = normalizeTexto(pais || 'México');
+
+        const ubicacion = await geocodificarDireccion(calleNorm, numeroNorm, coloniaNorm, ciudadNorm, estadoNorm, paisNorm);
 
         res.json({
             success: true,

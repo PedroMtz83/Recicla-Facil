@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/geocoding_service.dart';
+import 'dart:async';
 
 class MapaUbicacionWidget extends StatefulWidget {
   final double latitud;
@@ -30,6 +31,9 @@ class _MapaUbicacionWidgetState extends State<MapaUbicacionWidget> {
   String? _direccionObtenida;
   String? _errorMensaje;
   final GeocodingService _geocodingService = GeocodingService();
+  Timer? _debounceTimer;
+  String? _lastHash;
+  bool _bloquearPosicion = false;
 
   @override
   void initState() {
@@ -52,12 +56,17 @@ class _MapaUbicacionWidgetState extends State<MapaUbicacionWidget> {
       );
 
       setState(() {
-        if (direccion.calle != null && direccion.calle!.isNotEmpty && !direccion.calle!.contains('Desconocida') && !direccion.calle!.contains('Error')) {
-          _direccionObtenida = 'Calle: ${direccion.calle}\nNúmero: ${direccion.numero}\nColonia: ${direccion.colonia}';
+        final tieneCalle = direccion.calle != null && direccion.calle!.isNotEmpty && !direccion.calle!.toLowerCase().contains('desconocida');
+        final tieneColonia = direccion.colonia != null && direccion.colonia!.isNotEmpty && !direccion.colonia!.toLowerCase().contains('desconocida');
+
+        if (tieneCalle || tieneColonia) {
+          _direccionObtenida = 'Calle: ${direccion.calle ?? "N/A"}\nNúmero: ${direccion.numero ?? "S/N"}\nColonia: ${direccion.colonia ?? "N/A"}';
           _ultimaDireccion = direccion;
+          _errorMensaje = null;
         } else {
           _direccionObtenida = 'Dirección no disponible en esta ubicación.\nUsa el campo de dirección manual.';
           _ultimaDireccion = null;
+          _errorMensaje = 'Los datos de dirección no son confiables para esta ubicación';
         }
         _cargando = false;
       });
@@ -76,6 +85,8 @@ class _MapaUbicacionWidgetState extends State<MapaUbicacionWidget> {
       });
     }
   }
+
+  String _hashPos(LatLng p) => '${(p.latitude * 100000).round()}|${(p.longitude * 100000).round()}';
 
   @override
   Widget build(BuildContext context) {
@@ -118,8 +129,19 @@ class _MapaUbicacionWidgetState extends State<MapaUbicacionWidget> {
                     zoom: 17.0,
                     onTap: (tapPosition, point) {
                       // Permitir click en el mapa para colocar marcador
+                      if (_bloquearPosicion) return; // Si está bloqueado, ignorar taps
+
                       setState(() => _posicionActual = point);
-                      _obtenerDireccion(point);
+
+                      final hash = _hashPos(point);
+                      if (hash == _lastHash) return; // Ignorar cambios mínimos
+                      _lastHash = hash;
+
+                      // Debounce para limitar llamadas a la API
+                      _debounceTimer?.cancel();
+                      _debounceTimer = Timer(Duration(milliseconds: 700), () {
+                        _obtenerDireccion(point);
+                      });
                     },
                   ),
                   children: [
