@@ -209,141 +209,142 @@ class _AgregarContenidoScreenState extends State<AgregarContenidoScreen> {
         key: _formKey,
         child: SingleChildScrollView(
           padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTextFormField(
-                _tituloController,
-                'Título',
-                'Agregue un título para el contenido',
-                validationMsg: 'El título es obligatorio',
-              ),
-              SizedBox(height: 15),
-              _buildTextFormField(
-                _descripcionController,
-                'Descripción corta',
-                'Redacte una descripción acerca del contenido',
-                validationMsg: 'La descripción es obligatoria',
-                maxLines: 3,
-              ),
-              SizedBox(height: 15),
-              _buildTextFormField(
-                _contenidoController,
-                'Contenido completo',
-                'Incluya la información referente al registro',
-                validationMsg: 'El contenido es obligatorio',
-                maxLines: 6,
-              ),
-              SizedBox(height: 15),
-              Row(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 700),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Categoría',
-                          hintText: 'Seleccione alguna de las categorías disponibles',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        value: catSelect,
-                        items: _categoria.map((String valor) {
-                          return DropdownMenuItem<String>(
-                            value: valor,
-                            child: Text(
-                              valor.replaceAll('-', ' ').toUpperCase(),
-                              style: const TextStyle(fontSize: 16),
+                  _buildTextFormField(
+                    _tituloController,
+                    'Título',
+                    'Agregue un título para el contenido',
+                    validationMsg: 'El título es obligatorio',
+                  ),
+                  SizedBox(height: 15),
+                  _buildTextFormField(
+                    _descripcionController,
+                    'Descripción corta',
+                    'Redacte una descripción acerca del contenido',
+                    validationMsg: 'La descripción es obligatoria',
+                    maxLines: 3,
+                  ),
+                  SizedBox(height: 15),
+                  _buildTextFormField(
+                    _contenidoController,
+                    'Contenido completo',
+                    'Incluya la información referente al registro',
+                    validationMsg: 'El contenido es obligatorio',
+                    maxLines: 6,
+                  ),
+                  SizedBox(height: 15),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'Categoría',
+                            hintText: 'Seleccione alguna de las categorías disponibles',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          );
-                        }).toList(),
-                        onChanged: (String? nuevoValor) {
-                          setState(() {
-                            catSelect = nuevoValor!;
-                          });
-                        },
+                          ),
+                          value: catSelect,
+                          items: _categoria.map((String valor) {
+                            return DropdownMenuItem<String>(
+                              value: valor,
+                              child: Text(
+                                valor.replaceAll('-', ' ').toUpperCase(),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? nuevoValor) {
+                            setState(() {
+                              catSelect = nuevoValor!;
+                            });
+                          },
+                        ),
                       ),
+                      SizedBox(width: 10),
+                      Flexible(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: 'Tipo de material',
+                            hintText: 'Seleccione alguno de los tipos de material disponibles',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          value: materialSelect,
+                          items: _materiales.map((String valor) {
+                            return DropdownMenuItem<String>(
+                              value: valor,
+                              child: Text(
+                                valor.toUpperCase(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? nuevoValor) {
+                            setState(() {
+                              materialSelect = nuevoValor!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 15),
+                  _buildTextFormField(_puntosClaveController, 'Puntos clave (separados por coma)', 'Indique los puntos clave del registro'),
+                  SizedBox(height: 15),
+                  _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)','Indique las etiquetas referentes al registro'),
+                  SizedBox(height: 20),
+
+                  OutlinedButton.icon(
+                    onPressed: _seleccionarImagenes,
+                    icon: Icon(Icons.add_photo_alternate_outlined),
+                    label: Text('Seleccionar Imágenes'),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                     ),
                   ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      isExpanded: true, // ajusta el dropdown al ancho disponible
-                      decoration: InputDecoration(
-                        labelText: 'Tipo de material',
-                        hintText: 'Seleccione alguno de los tipos de material disponibles',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                  SizedBox(height: 10),
+                  if (_imagenesSeleccionadas.isNotEmpty)
+                    _buildVistaPreviaImagenes(),
+
+                  SizedBox(height: 30),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: _estaCargando ? null : _agregarContenido,
+                      icon: _estaCargando
+                          ? Container(
+                        width: 24,
+                        height: 24,
+                        padding: EdgeInsets.all(2.0),
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                      )
+                          : Icon(Icons.add_task),
+                      label: Text(_estaCargando ? 'Guardando...' : 'Guardar contenido'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
                       ),
-                      value: materialSelect,
-                      items: _materiales.map((String valor) {
-                        return DropdownMenuItem<String>(
-                          value: valor,
-                          child: Text(
-                            valor.toUpperCase(),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (String? nuevoValor) {
-                        setState(() {
-                          materialSelect = nuevoValor!;
-                        });
-                      },
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 15),
-              _buildTextFormField(_puntosClaveController, 'Puntos clave (separados por coma)', 'Indique los puntos clave del registro'),
-              SizedBox(height: 15),
-              _buildTextFormField(_etiquetasController, 'Etiquetas (separadas por coma)','Indique las etiquetas referentes al registro'),
-              SizedBox(height: 20),
-
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _seleccionarImagenes,
-                  icon: Icon(Icons.add_photo_alternate_outlined),
-                  label: Text('Seleccionar Imágenes'),
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                  ),
-                ),
-              ),
-              SizedBox(height: 10),
-              if (_imagenesSeleccionadas.isNotEmpty)
-                _buildVistaPreviaImagenes(),
-
-              SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _estaCargando ? null : _agregarContenido,
-                  icon: _estaCargando
-                      ? Container(
-                    width: 24,
-                    height: 24,
-                    padding: EdgeInsets.all(2.0),
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
-                  )
-                      : Icon(Icons.add_task),
-                  label: Text(_estaCargando ? 'Guardando...' : 'Guardar contenido'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
