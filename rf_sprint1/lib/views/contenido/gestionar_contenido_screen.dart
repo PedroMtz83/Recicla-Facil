@@ -432,68 +432,79 @@ class _GestionarContenidoScreenState extends State<GestionarContenidoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: FutureBuilder<List<ContenidoEducativo>>(
-        future: _contenidosFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error al cargar datos: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No hay contenido para gestionar.'));
-          }
+      body: Center(
+        child: FutureBuilder<List<ContenidoEducativo>>(
+          future: _contenidosFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Error al cargar datos: ${snapshot.error}'));
+            }
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Center(child: Text('No hay contenido para gestionar.'));
+            }
 
-          final contenidos = snapshot.data!;
-          return RefreshIndicator(
-            onRefresh: () async => _recargarContenidos(),
-            child: ListView.builder(
-              padding: EdgeInsets.all(20),
-              itemCount: contenidos.length,
-              itemBuilder: (context, index) {
-                final contenido = contenidos[index];
-                return Container(
-                  margin: EdgeInsets.only(bottom: 20),
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade100,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(contenido.titulo, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      SizedBox(height: 10),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: _buildImagenWidget(contenido.imagenPrincipal, height: 180, fit: BoxFit.contain),
-                      ),
-                      SizedBox(height: 10),
-                      Container(
-                        decoration: BoxDecoration(color: Colors.green.shade200, borderRadius: BorderRadius.circular(8)),
-                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        child: Row(
+            final contenidos = snapshot.data!;
+            return RefreshIndicator(
+              onRefresh: () async => _recargarContenidos(),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(20),
+
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: contenidos.map((contenido) => ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 800),
+                      child: Container(
+                        margin: EdgeInsets.only(bottom: 20),
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(child: Text(contenido.descripcion, style: TextStyle(fontSize: 14))),
-                            IconButton(
-                              icon: Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => _mostrarDialogoEditar(contenido),
+                            Text(contenido.titulo, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            SizedBox(height: 10),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: _buildImagenWidget(contenido.imagenPrincipal, height: 180, fit: BoxFit.contain),
                             ),
-                            IconButton(
-                              icon: Icon(Icons.delete, color: Colors.red),
-                              onPressed: () => _eliminarContenido(contenido.id, contenido.titulo),
+                            SizedBox(height: 10),
+                            Container(
+                              decoration: BoxDecoration(color: Colors.green.shade200, borderRadius: BorderRadius.circular(8)),
+                              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Expanded(child: Text(contenido.descripcion, style: TextStyle(fontSize: 14))),
+                                  IconButton(
+                                    icon: Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () => _mostrarDialogoEditar(contenido),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _eliminarContenido(contenido.id, contenido.titulo),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          );
-        },
+
+
+                  )).toList(),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
