@@ -86,7 +86,7 @@ class _SolicitudesPuntosScreenState extends State<SolicitudesPuntosScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Mis Solicitudes de Puntos',
+          'Mis solicitudes de puntos',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,

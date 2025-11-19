@@ -40,7 +40,7 @@ class _QuejasTabsScreenState extends State<PuntosTabsScreen> {
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.admin_panel_settings),
-          label: 'Gestionar puntos',
+          label: 'Gestionar puntos/solicitudes',
         ),
       ];
     } else {

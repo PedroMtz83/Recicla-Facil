@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../models/punto_reciclaje.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/puntos_provider.dart';
 import '../../services/puntos_reciclaje_service.dart';
 import 'solicitudes_puntos_screen.dart'; // Importar la pantalla de solicitudes
@@ -16,6 +17,7 @@ class PuntosScreen extends StatefulWidget {
 }
 
 class _PuntosScreenState extends State<PuntosScreen> {
+  bool isAdmin=false;
   String? _materialFiltro;
   bool _mostrarMapa = false;
   LatLng? _currentLocation;
@@ -104,14 +106,15 @@ class _PuntosScreenState extends State<PuntosScreen> {
     final puntosProvider = context.watch<PuntosProvider>();
     final bool _isLoading = puntosProvider.isLoading;
     final List<PuntoReciclaje> _puntosEncontrados = puntosProvider.puntos;
-
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    isAdmin=authProvider.isAdmin;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
         actions: [
-          // Botón para ver mis solicitudes
+         if(!isAdmin)
           Container(
             margin: EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
@@ -158,6 +161,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 ),
                 SizedBox(height: 8),
                 // NUEVO: Información sobre solicitudes
+                if(!isAdmin)
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(12),
@@ -166,11 +170,13 @@ class _PuntosScreenState extends State<PuntosScreen> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.green[100]!),
                   ),
+
                   child: Row(
                     children: [
                       Icon(Icons.info_outline, size: 16,
                           color: Colors.green[700]),
                       SizedBox(width: 8),
+
                       Expanded(
                         child: Text(
                           '¿No encuentras un punto? ¡Solicita agregarlo!',
@@ -180,6 +186,8 @@ class _PuntosScreenState extends State<PuntosScreen> {
                           ),
                         ),
                       ),
+                      //AuthProvider
+
                       TextButton(
                         onPressed: _navegarANuevaSolicitud,
                         child: Text(
@@ -262,13 +270,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
         ],
       ),
       // NUEVO: Floating Action Button para crear solicitud rápida
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'fab_puntos_screen',
-        onPressed: _navegarANuevaSolicitud,
-        child: Icon(Icons.add_location_alt),
-        backgroundColor: Colors.green,
-        tooltip: 'Solicitar nuevo punto de reciclaje',
-      ),
+
     );
   }
 
@@ -276,7 +278,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: EdgeInsets.all(32.0),
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -297,6 +299,7 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8),
+              if(isAdmin)
               Text(
                 'Puedes solicitar agregar un nuevo punto de reciclaje en tu zona',
                 style: TextStyle(
@@ -305,7 +308,10 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
+
               SizedBox(height: 24),
+              //AuthProvider
+              if(!isAdmin)
               ElevatedButton.icon(
                 onPressed: _navegarANuevaSolicitud,
                 icon: Icon(Icons.add_location_alt),
@@ -403,6 +409,8 @@ class _PuntosScreenState extends State<PuntosScreen> {
             ),
           ),
         // NUEVO: Botón para solicitar punto en el mapa
+        //AuthProvider
+        if(!isAdmin)
         Positioned(
           bottom: 20,
           left: 20,
@@ -469,6 +477,8 @@ class _PuntosScreenState extends State<PuntosScreen> {
                 ),
                 SizedBox(height: 20),
                 // NUEVO: Botón para sugerir mejoras/solicitar puntos similares
+               //AuthProvider
+                if(!isAdmin)
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton(
